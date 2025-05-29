@@ -56,21 +56,9 @@ export interface Species {
   evolution_chain: {
     url: string;
   };
-}
-
-/** Evolution chain structure (nested) */
-export interface EvolutionChain {
-  id: number;
-  chain: EvolutionNode;
-}
-
-export interface EvolutionNode {
-  species: {
-    name: string;
-    url: string;
+  flavor_text_entries: {
+    flavor_text: string;
   };
-  evolves_to: EvolutionNode[];
-  evolution_details: any[];
 }
 
 
@@ -102,12 +90,4 @@ export function getPokemon(nameOrId: string | number): Promise<Pokemon> {
 export function getSpecies(id: number): Promise<Species> {
   const endpoint = `https://pokeapi.co/api/v2/pokemon-species/${id}`;
   return fetchJSON<Species>(endpoint);
-}
-
-/**
- * Fetch the full evolution chain object from a species' evolution_chain.url.
- * @param url Full URL from the species.evolution_chain.url field
- */
-export function getEvolutionChain(url: string): Promise<EvolutionChain> {
-  return fetchJSON<EvolutionChain>(url);
 }

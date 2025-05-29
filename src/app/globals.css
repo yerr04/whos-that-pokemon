@@ -1,20 +1,30 @@
 @import "tailwindcss";
 
+/* Pokemon Emerald font declaration */
+@font-face {
+  font-family: 'Pokemon Emerald';
+  src: url('/pokemon-emerald.otf.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --font-pokemon: 'Pokemon Emerald', Arial, Helvetica, sans-serif;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-pokemon);
   --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #05132b;
     --foreground: #ededed;
   }
 }
@@ -22,5 +32,6 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-pokemon);
+  font-size: 18px; /* Set default font size */
 }
