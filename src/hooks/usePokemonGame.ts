@@ -21,7 +21,9 @@ export function usePokemonGame() {
     setWin(false)
     
     try {
+      // Randomly select a Pokemon ID between pokedex number 1 and 1025
       const randomId = Math.floor(Math.random() * 1025) + 1
+      // Fetch pokemon data
       const pokemon = await getPokemon(randomId)
       setTargetName(pokemon.name.toLowerCase())
 
@@ -47,6 +49,7 @@ export function usePokemonGame() {
     }
   }
 
+  // Handle guess submission
   const handleGuess = () => {
     if (win || guessesMade >= MAX_GUESSES) return
 
@@ -57,6 +60,7 @@ export function usePokemonGame() {
     setCurrentGuess('')
   }
 
+  // Debug mode reveals all hints (will remove in prod)
   const revealedHints = debugMode 
     ? HINT_SEQUENCE 
     : win 
