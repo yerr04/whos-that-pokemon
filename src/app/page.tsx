@@ -150,7 +150,10 @@ export default function GameBoard() {
             </div>
           ) : (
             <>
-              <form onSubmit={onSubmit} className="flex space-x-2 justify-center">
+              <form 
+                  onSubmit={onSubmit}
+                  id="guess-form" 
+                  className="flex space-x-2 justify-center">
                 <input
                   value={currentGuess}
                   onChange={(e) => setCurrentGuess(e.target.value)}

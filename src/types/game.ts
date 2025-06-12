@@ -3,6 +3,11 @@ export type HintType =
   | 'region'
   | 'ability'
   | 'types'
+  | 'pokedex'
+  | 'move'
+  | 'evolution'
+  | 'height'
+  | 'weight'
   | 'cry'
   | 'silhouette'
 
@@ -12,17 +17,26 @@ export interface ParsedPokemonInfo {
   region: string
   ability: string
   types: string[]
-  silhouetteUrl: string
   pokedexEntry: string
+  silhouetteUrl: string
+  move: string
+  evolutionStage: string
+  height: number
+  weight: number
 }
 
-export const HINT_SEQUENCE: HintType[] = [
+export const RANDOMIZABLE_HINTS: HintType[] = [
   'bst',
   'region',
   'ability',
   'types',
-  'cry',
-  'silhouette',
+  'pokedex',
+  'move',
+  'evolution',
+  'height',
+  'weight',
 ]
 
-export const MAX_GUESSES = HINT_SEQUENCE.length + 1
+export const FIXED_FINAL_HINTS: HintType[] = ['cry', 'silhouette']
+
+export const MAX_GUESSES = 7

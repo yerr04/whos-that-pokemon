@@ -35,6 +35,9 @@ export interface Pokemon {
   abilities: AbilityEntry[];
   types: TypeEntry[];
   stats: StatEntry[];
+  height: number; // in decimeters
+  weight: number; // in hectograms
+  moves: MoveEntry[];
   sprites: {
     front_default: string | null;
     other: {
@@ -45,12 +48,24 @@ export interface Pokemon {
   };
 }
 
-/** Species data (for evolution chain URL, generation, region mapping, etc.) */
+export interface MoveEntry {
+  move: {
+    name: string;
+    url: string;
+  };
+  version_group_details: {
+    level_learned_at: number;
+    move_learn_method: {
+      name: string;
+    };
+  }[];
+}
+
 export interface Species {
   id: number;
   name: string;
   generation: {
-    name: string; // e.g. "generation-i"
+    name: string;
     url: string;
   };
   evolution_chain: {
@@ -58,9 +73,29 @@ export interface Species {
   };
   flavor_text_entries: {
     flavor_text: string;
-  };
+    language: {
+      name: string;
+    };
+  }[];
 }
 
+export interface EvolutionChain {
+  chain: {
+    species: {
+      name: string;
+    };
+    evolves_to: {
+      species: {
+        name: string;
+      };
+      evolves_to: {
+        species: {
+          name: string;
+        };
+      }[];
+    }[];
+  };
+}
 
 /** ----- Helper: Typed Fetch with Error Handling ----- */
 async function fetchJSON<T>(url: string): Promise<T> {
@@ -90,4 +125,9 @@ export function getPokemon(nameOrId: string | number): Promise<Pokemon> {
 export function getSpecies(id: number): Promise<Species> {
   const endpoint = `https://pokeapi.co/api/v2/pokemon-species/${id}`;
   return fetchJSON<Species>(endpoint);
+}
+
+// Add function to get evolution chain
+export function getEvolutionChain(url: string): Promise<EvolutionChain> {
+  return fetchJSON<EvolutionChain>(url);
 }

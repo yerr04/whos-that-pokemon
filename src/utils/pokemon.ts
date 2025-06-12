@@ -1,4 +1,5 @@
 import { Pokemon } from '@/lib/pokeapi'
+import { HintType, RANDOMIZABLE_HINTS, FIXED_FINAL_HINTS } from '@/types/game'
 import Fuse from 'fuse.js'
 
 export function computeBST(p: Pokemon): number {
@@ -37,4 +38,81 @@ export function isCloseMatch(guess: string, target: string): boolean {
   
   const result = fuse.search(guess);
   return result.length > 0 && result[0].score! <= 0.4;
+}
+
+// Get a random learnable move from the Pokemon's moveset
+export function getRandomMove(moves: any[]): string {
+  // Filter to level-up moves only
+  const levelUpMoves = moves.filter(moveEntry => 
+    moveEntry.version_group_details.some(detail => 
+      detail.move_learn_method.name === 'level-up'
+    )
+  );
+  
+  if (levelUpMoves.length === 0) return '—';
+  
+  const randomMove = levelUpMoves[Math.floor(Math.random() * levelUpMoves.length)];
+  return randomMove.move.name.replace('-', ' ');
+}
+
+// Determine evolution stage from evolution chain
+export function getEvolutionStage(pokemonName: string, evolutionChain: any): string {
+  const chain = evolutionChain.chain;
+  
+  // First stage
+  if (chain.species.name === pokemonName) {
+    return chain.evolves_to.length > 0 ? 'First Stage' : 'No Evolution';
+  }
+  
+  // Second stage
+  for (const secondStage of chain.evolves_to) {
+    if (secondStage.species.name === pokemonName) {
+      return secondStage.evolves_to.length > 0 ? 'Second Stage' : 'Final Stage';
+    }
+    
+    // Third stage
+    for (const thirdStage of secondStage.evolves_to) {
+      if (thirdStage.species.name === pokemonName) {
+        return 'Final Stage';
+      }
+    }
+  }
+  
+  return 'Unknown';
+}
+
+// Convert height from decimeters to readable format
+export function formatHeight(decimeters: number): string {
+  const meters = decimeters / 10;
+  const feet = Math.floor(meters * 3.28084);
+  const inches = Math.round((meters * 3.28084 - feet) * 12);
+  return `${meters}m (${feet}'${inches}")`;
+}
+
+// Convert weight from hectograms to readable format
+export function formatWeight(hectograms: number): string {
+  const kg = hectograms / 10;
+  const lbs = Math.round(kg * 2.20462);
+  return `${kg}kg (${lbs} lbs)`;
+}
+
+// Get English flavor text from species data
+export function getEnglishFlavorText(flavorTextEntries: any[]): string {
+  const englishEntry = flavorTextEntries.find(entry => 
+    entry.language.name === 'en'
+  );
+  return englishEntry?.flavor_text.replace(/\f/g, ' ') || '—';
+}
+
+// Generate randomized hint sequence
+export function generateHintSequence(): HintType[] {
+  // Shuffle the randomizable hints
+  const shuffled = [...RANDOMIZABLE_HINTS].sort(() => Math.random() - 0.5);
+  
+  // Take first 5 randomized hints + cry + silhouette as the final 2
+  return [
+    ...shuffled.slice(0, 4),
+    'cry',        // 6th hint - always cry
+    'silhouette'  // 7th hint - always silhouette
+  ];
 }

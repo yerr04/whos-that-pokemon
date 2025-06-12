@@ -17,7 +17,7 @@ export function Navbar() {
               className="w-8 h-8"
             />
             <span className="text-xl font-bold text-white">
-              Who's That Pokémon?
+              PokéNerdle
             </span>
           </Link>
 
@@ -27,13 +27,13 @@ export function Navbar() {
               href="/" 
               className="text-white hover:text-[#55c58d] transition-colors"
             >
-              Classic Mode
+              Pokedex Mode
             </Link>
             <Link 
-              href="/survival" 
+              href="/pokedexMode" 
               className="text-white hover:text-[#55c58d] transition-colors"
             >
-              Survival Mode
+              Unlimted Mode
             </Link>
             <Link 
               href="/timed" 

@@ -1,5 +1,5 @@
 import { HintType, ParsedPokemonInfo } from '@/types/game'
-import { capitalize } from '@/utils/pokemon'
+import { capitalize, formatHeight, formatWeight } from '@/utils/pokemon'
 
 interface HintBlockProps {
   type: HintType
@@ -9,7 +9,7 @@ interface HintBlockProps {
 
 export function HintBlock({ type, info, win = false }: HintBlockProps) {
   const commonCls =
-    'bg-transparent border text-[#F2F2F2]-800 px-3 py-2 rounded-lg text-center'
+    'bg-transparent border text-[#F2F2F2] px-3 py-2 rounded-lg text-center'
 
   switch (type) {
     case 'bst':
@@ -35,6 +35,25 @@ export function HintBlock({ type, info, win = false }: HintBlockProps) {
           ))}
         </div>
       )
+    
+    case 'pokedex':
+      return (
+        <div className={`${commonCls} text-sm`}>
+          "{info.pokedexEntry}"
+        </div>
+      )
+    
+    case 'move':
+      return <div className={commonCls}>Can Learn: {capitalize(info.move)}</div>
+    
+    case 'evolution':
+      return <div className={commonCls}>Evolution: {info.evolutionStage}</div>
+    
+    case 'height':
+      return <div className={commonCls}>Height: {formatHeight(info.height)}</div>
+    
+    case 'weight':
+      return <div className={commonCls}>Weight: {formatWeight(info.weight)}</div>
     
     case 'cry':
       return (

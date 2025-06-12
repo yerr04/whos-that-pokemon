@@ -1,7 +1,18 @@
 import { useState, useEffect } from 'react'
-import { getPokemon, getSpecies } from '@/lib/pokeapi'
-import { ParsedPokemonInfo, HINT_SEQUENCE, MAX_GUESSES } from '@/types/game'
-import { computeBST, getCryUrl, mapGenerationToRegion, isCloseMatch } from '@/utils/pokemon'
+import { getPokemon, getSpecies, getEvolutionChain } from '@/lib/pokeapi'
+import { ParsedPokemonInfo, RANDOMIZABLE_HINTS, FIXED_FINAL_HINTS, HintType, MAX_GUESSES } from '@/types/game'
+import { 
+  computeBST, 
+  getCryUrl, 
+  mapGenerationToRegion, 
+  isCloseMatch,
+  getRandomMove,
+  getEvolutionStage,
+  formatHeight,
+  formatWeight,
+  getEnglishFlavorText,
+  generateHintSequence
+} from '@/utils/pokemon'
 
 export function usePokemonGame() {
   const [loading, setLoading] = useState(true)
@@ -12,6 +23,7 @@ export function usePokemonGame() {
   const [currentGuess, setCurrentGuess] = useState('')
   const [win, setWin] = useState(false)
   const [debugMode, setDebugMode] = useState(false)
+  const [hintSequence, setHintSequence] = useState<HintType[]>([])
 
   const loadNewPokemon = async () => {
     setLoading(true)
@@ -21,13 +33,17 @@ export function usePokemonGame() {
     setWin(false)
     
     try {
-      // Randomly select a Pokemon ID between pokedex number 1 and 1025
+      // Generate new random hint sequence
+      const newHintSequence = generateHintSequence()
+      setHintSequence(newHintSequence)
+      
+      // Randomly select a Pokemon ID between 1 and 1025
       const randomId = Math.floor(Math.random() * 1025) + 1
-      // Fetch pokemon data
       const pokemon = await getPokemon(randomId)
       setTargetName(pokemon.name.toLowerCase())
 
       const species = await getSpecies(pokemon.id)
+      const evolutionChain = await getEvolutionChain(species.evolution_chain.url)
 
       setInfo({
         bst: computeBST(pokemon),
@@ -39,7 +55,11 @@ export function usePokemonGame() {
           .map((t) => t.type.name),
         silhouetteUrl:
           pokemon.sprites.other['official-artwork'].front_default || '',
-        pokedexEntry: species.flavor_text_entries.flavor_text,
+        pokedexEntry: getEnglishFlavorText(species.flavor_text_entries),
+        move: getRandomMove(pokemon.moves),
+        evolutionStage: getEvolutionStage(pokemon.name, evolutionChain),
+        height: pokemon.height,
+        weight: pokemon.weight,
       })
     } catch (err: any) {
       console.error(err)
@@ -60,12 +80,12 @@ export function usePokemonGame() {
     setCurrentGuess('')
   }
 
-  // Debug mode reveals all hints (will remove in prod)
+  // Use the randomized hint sequence instead of fixed sequence
   const revealedHints = debugMode 
-    ? HINT_SEQUENCE 
+    ? hintSequence 
     : win 
-    ? HINT_SEQUENCE 
-    : HINT_SEQUENCE.slice(0, guessesMade)
+    ? hintSequence 
+    : hintSequence.slice(0, guessesMade)
 
   useEffect(() => {
     loadNewPokemon()
