@@ -1,7 +1,6 @@
 "use client"
 import { FormEvent, useState, useEffect } from 'react'
 import { HintBlock } from '@/components/HintBlock'
-import { RulesModal } from '@/components/Modal'
 import { usePokemonGame } from '@/hooks/usePokemonGame'
 import { MAX_GUESSES } from '@/types/game'
 import { capitalize } from '@/utils/pokemon'
@@ -60,7 +59,6 @@ export default function GameBoard() {
   return (
     <>
       
-      <RulesModal isOpen={showRules} onClose={handleCloseRules} />
 
       <div className="max-w-3xl mx-auto mt-12 p-4 bg-[#1f2b3d] rounded-lg shadow-lg">
         {/* Debug toggle button */}
@@ -71,12 +69,6 @@ export default function GameBoard() {
               className="px-3 py-1 bg-yellow-500 text-black rounded text-sm"
             >
               Dev Mode : {debugMode ? 'ON' : 'OFF'}
-            </button>
-            <button
-              onClick={() => setShowRules(true)}
-              className="px-3 py-1 bg-blue-500 text-white rounded text-sm"
-            >
-              Show Rules
             </button>
           </div>
         )}
