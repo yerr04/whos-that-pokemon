@@ -25,11 +25,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <link rel="icon" href="/assets/pokeball.svg" type="image/svg+xml" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <Navbar />
-        <main className="container mx-auto px-4 py-8"></main>
         {children}
       </body>
     </html>

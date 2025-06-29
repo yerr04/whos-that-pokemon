@@ -9,16 +9,18 @@ export function Navbar() {
     <nav className="bg-[#1f2b3d] border-b-2 border-[#55c58d] sticky top-0 z-40">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex justify-between items-center h-16">
-          {/* Logo/Brand */}
+          {/* Logo */}
           <Link href="/" className="flex items-center space-x-2">
             <img 
               src="/assets/pokeball.svg" 
               alt="Pokeball" 
               className="w-8 h-8"
             />
-            <span className="text-xl font-bold text-white">
-              PokéNerdle
-            </span>
+            <img
+              src="/assets/pokenerdle.png" 
+              className="w-32 pb-2"
+              alt="PokéNerdle Logo"
+            />
           </Link>
 
           {/* Desktop Navigation */}
@@ -27,13 +29,13 @@ export function Navbar() {
               href="/" 
               className="text-white hover:text-[#55c58d] transition-colors"
             >
-              Pokedex Mode
+              Unlimited Mode
             </Link>
             <Link 
-              href="/pokedexMode" 
+              href="/survival" 
               className="text-white hover:text-[#55c58d] transition-colors"
             >
-              Unlimted Mode
+              Survival Mode
             </Link>
             <Link 
               href="/timed" 
@@ -74,7 +76,7 @@ export function Navbar() {
                 className="block px-3 py-2 text-white hover:text-[#55c58d] transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Classic Mode
+                Unlimited Mode
               </Link>
               <Link 
                 href="/survival" 
