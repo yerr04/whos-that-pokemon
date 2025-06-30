@@ -18,7 +18,7 @@ export function Navbar() {
             />
             <img
               src="/assets/pokenerdle.png" 
-              className="w-32 pb-2"
+              className="h-11 pb-1.25"
               alt="PokéNerdle Logo"
             />
           </Link>
