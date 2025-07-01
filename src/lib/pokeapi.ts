@@ -97,15 +97,57 @@ export interface EvolutionChain {
   };
 }
 
-/** ----- Helper: Typed Fetch with Error Handling ----- */
+/** ----- Cache Implementation ----- */
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+}
+
+const cache = new Map<string, CacheEntry<any>>();
+const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+
+function getCachedData<T>(key: string): T | null {
+  const cached = cache.get(key) as CacheEntry<T> | undefined;
+  
+  if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+    return cached.data;
+  }
+  
+  // Remove expired entry
+  if (cached) {
+    cache.delete(key);
+  }
+  
+  return null;
+}
+
+function setCachedData<T>(key: string, data: T): void {
+  cache.set(key, {
+    data,
+    timestamp: Date.now()
+  });
+}
+
+/** ----- Helper: Typed Fetch with Error Handling and Caching ----- */
 async function fetchJSON<T>(url: string): Promise<T> {
+  // Check cache first
+  const cached = getCachedData<T>(url);
+  if (cached) {
+    return cached;
+  }
+
   const res = await fetch(url);
   if (!res.ok) {
     throw new Error(`PokeAPI error (${res.status}): ${res.statusText}`);
   }
-  return (await res.json()) as T;
+  
+  const data = (await res.json()) as T;
+  
+  // Cache the result
+  setCachedData(url, data);
+  
+  return data;
 }
-
 
 /** ----- Client Functions ----- */
 
@@ -127,7 +169,29 @@ export function getSpecies(id: number): Promise<Species> {
   return fetchJSON<Species>(endpoint);
 }
 
-// Add function to get evolution chain
+/**
+ * Fetch evolution chain data
+ * @param url Evolution chain URL from species data
+ */
 export function getEvolutionChain(url: string): Promise<EvolutionChain> {
   return fetchJSON<EvolutionChain>(url);
+}
+
+/** ----- Cache Utilities (Optional) ----- */
+
+/**
+ * Clear all cached data
+ */
+export function clearCache(): void {
+  cache.clear();
+}
+
+/**
+ * Get cache statistics
+ */
+export function getCacheStats() {
+  return {
+    size: cache.size,
+    entries: Array.from(cache.keys())
+  };
 }
