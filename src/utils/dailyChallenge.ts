@@ -3,17 +3,26 @@ export function getDailyPokemonId(): number {
   const now = new Date();
   const est = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
   
+  console.log('Current time:', now.toISOString());
+  console.log('EST time:', est.toISOString());
+  console.log('EST hours:', est.getHours());
+  
   // If it's before 10 AM, use previous day
   if (est.getHours() < 10) {
     est.setDate(est.getDate() - 1);
+    console.log('Before 10 AM, using previous day:', est.toISOString());
   }
   
   // Use date as seed for consistent daily Pokemon
   const dateString = est.toISOString().split('T')[0]; // YYYY-MM-DD
+  console.log('Date string:', dateString);
+  
   const seed = dateString.split('-').join(''); // YYYYMMDD
+  console.log('Seed:', seed);
   
   // Convert date to Pokemon ID (1-1025)
   const pokemonId = (parseInt(seed) % 1025) + 1;
+  console.log('Pokemon ID:', pokemonId);
   
   return pokemonId;
 }
@@ -44,9 +53,16 @@ export function getTodaysDateKey(): string {
   const now = new Date();
   const est = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
   
+  console.log('Getting date key - EST time:', est.toISOString());
+  console.log('EST hours:', est.getHours());
+  
   if (est.getHours() < 10) {
     est.setDate(est.getDate() - 1);
+    console.log('Before 10 AM, using previous day for date key:', est.toISOString());
   }
   
-  return est.toISOString().split('T')[0];
+  const dateKey = est.toISOString().split('T')[0];
+  console.log('Date key:', dateKey);
+  
+  return dateKey;
 }
