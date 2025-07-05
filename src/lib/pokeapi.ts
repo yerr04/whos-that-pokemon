@@ -177,18 +177,12 @@ export function getEvolutionChain(url: string): Promise<EvolutionChain> {
   return fetchJSON<EvolutionChain>(url);
 }
 
-/** ----- Cache Utilities (Optional) ----- */
-
-/**
- * Clear all cached data
- */
+/* Clear all cached data */
 export function clearCache(): void {
   cache.clear();
 }
 
-/**
- * Get cache statistics
- */
+/* Get cache statistics */
 export function getCacheStats() {
   return {
     size: cache.size,

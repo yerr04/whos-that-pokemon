@@ -26,7 +26,13 @@ export function Navbar() {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
             <Link 
-              href="/" 
+              href="/daily" 
+              className="text-white hover:text-[#55c58d] transition-colors"
+            >
+              Daily Challenge
+            </Link>
+            <Link 
+              href="/unlimited" 
               className="text-white hover:text-[#55c58d] transition-colors"
             >
               Unlimited Mode
@@ -72,7 +78,14 @@ export function Navbar() {
           <div className="md:hidden border-t border-[#55c58d]">
             <div className="px-2 pt-2 pb-3 space-y-1">
               <Link 
-                href="/" 
+                href="/daily" 
+                className="block px-3 py-2 text-white hover:text-[#55c58d] transition-colors"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Daily Challenge
+              </Link>
+              <Link 
+                href="/unlimited" 
                 className="block px-3 py-2 text-white hover:text-[#55c58d] transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >

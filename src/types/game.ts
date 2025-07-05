@@ -39,4 +39,9 @@ export const RANDOMIZABLE_HINTS: HintType[] = [
 
 export const FIXED_FINAL_HINTS: HintType[] = ['cry', 'silhouette']
 
+export const HINT_SEQUENCE: HintType[] = [
+  ...RANDOMIZABLE_HINTS,
+  ...FIXED_FINAL_HINTS
+]
+
 export const MAX_GUESSES = 7
