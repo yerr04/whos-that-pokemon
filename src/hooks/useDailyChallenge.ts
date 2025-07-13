@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react'
 import { useGameLogic } from './useGameLogic'
 import { getDailyPokemonId, getTimeUntilNextChallenge, getTodaysDateKey } from '@/utils/dailyChallenge'
-import { HINT_SEQUENCE, MAX_GUESSES } from '@/types/game'
+import { HintType, MAX_GUESSES } from '@/types/game'
+import { generateHintSequence } from '@/utils/pokemon'  // Fixed import
 
 interface DailyGameState {
   dateKey: string
@@ -11,20 +12,11 @@ interface DailyGameState {
   guesses: string[]
   win: boolean
   completed: boolean
-  devOverride?: boolean  // New field for dev mode
+  hintSequence: HintType[]
+  devOverride?: boolean
 }
 
 const STORAGE_KEY = 'daily-pokemon-game'
-
-// Fixed sequence for daily challenge (6 hints + 1 free guess = 7 total)
-const DAILY_HINT_SEQUENCE = [
-  'bst',
-  'region', 
-  'ability',
-  'types',
-  'cry',
-  'silhouette'
-]
 
 export function useDailyChallenge() {
   const gameLogic = useGameLogic()
@@ -32,18 +24,36 @@ export function useDailyChallenge() {
   const [timeUntilNext, setTimeUntilNext] = useState(getTimeUntilNextChallenge())
   const [currentDateKey, setCurrentDateKey] = useState(getTodaysDateKey())
 
+  // Generate deterministic hint sequence based on date
+  const generateDailyHintSequence = (dateKey: string): HintType[] => {
+    const seed = dateKey.replace(/-/g, '') // YYYYMMDD
+    let hash = parseInt(seed)
+    
+    const seededRandom = () => {
+      hash = (hash * 1664525 + 1013904223) % Math.pow(2, 32)
+      return (hash / Math.pow(2, 32))
+    }
+    
+    // Use the same hint generation logic as unlimited mode
+    return generateHintSequence(seededRandom)
+  }
+
   // Load daily challenge
   const loadDailyChallenge = async (forceNewPokemon = false) => {
     const todayKey = getTodaysDateKey()
     let pokemonId: number
+    let hintSequence: HintType[]
     
     if (forceNewPokemon) {
-      // Generate completely random Pokemon for dev mode
+      // Use the same random generation as unlimited mode
       pokemonId = Math.floor(Math.random() * 1025) + 1
+      hintSequence = generateHintSequence() // Truly random for dev
       console.log('Dev mode: forcing new random Pokemon ID:', pokemonId)
     } else {
-      // Use daily Pokemon
+      // Use deterministic daily Pokemon (same logic as unlimited but seeded)
       pokemonId = getDailyPokemonId()
+      hintSequence = generateDailyHintSequence(todayKey)
+      console.log('Daily Pokemon ID:', pokemonId, 'Hint sequence:', hintSequence)
     }
     
     // Load saved game state
@@ -53,7 +63,6 @@ export function useDailyChallenge() {
     if (savedGame && !forceNewPokemon) {
       const parsed = JSON.parse(savedGame) as DailyGameState
       
-      // Check if it's a new day (ignore devOverride for natural resets)
       if (parsed.dateKey === todayKey) {
         currentState = parsed
         console.log('Loading existing daily challenge:', currentState)
@@ -66,7 +75,8 @@ export function useDailyChallenge() {
           guesses: [],
           win: false,
           completed: false,
-          devOverride: false // Reset dev override on new day
+          hintSequence,
+          devOverride: false
         }
         localStorage.removeItem(STORAGE_KEY)
         console.log('New day detected, resetting daily challenge:', currentState)
@@ -80,6 +90,7 @@ export function useDailyChallenge() {
         guesses: [],
         win: false,
         completed: false,
+        hintSequence,
         devOverride: forceNewPokemon
       }
       if (forceNewPokemon) {
@@ -91,7 +102,7 @@ export function useDailyChallenge() {
     setGameState(currentState)
     setCurrentDateKey(todayKey)
     
-    // Load the Pokemon data
+    // Load the Pokemon data using the same logic as unlimited mode
     await gameLogic.loadPokemonData(pokemonId)
   }
 
@@ -112,7 +123,6 @@ export function useDailyChallenge() {
     
     setGameState(newState)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newState))
-    console.log('Saving daily challenge state:', newState)
     gameLogic.setCurrentGuess('')
     
     if (isCorrect) {
@@ -125,11 +135,7 @@ export function useDailyChallenge() {
   const resetDailyChallenge = () => {
     console.log('Manually resetting daily challenge with NEW Pokemon')
     localStorage.removeItem(STORAGE_KEY)
-    
-    // Reset base game logic
     gameLogic.resetGame()
-    
-    // Load with force new Pokemon flag
     loadDailyChallenge(true)
   }
 
@@ -138,17 +144,16 @@ export function useDailyChallenge() {
     const todayKey = getTodaysDateKey()
     if (currentDateKey !== todayKey) {
       console.log('Natural date change detected from', currentDateKey, 'to', todayKey)
-      // Natural reset always uses daily Pokemon (not random)
       loadDailyChallenge(false)
     }
   }
 
-  // Get revealed hints (use daily sequence, not full sequence)
+  // Use the stored hint sequence (same logic as unlimited mode)
   const revealedHints = gameLogic.debugMode 
-    ? DAILY_HINT_SEQUENCE 
+    ? gameState?.hintSequence || []
     : gameState?.win 
-    ? DAILY_HINT_SEQUENCE 
-    : DAILY_HINT_SEQUENCE.slice(0, gameState?.guessesMade || 0)
+    ? gameState?.hintSequence || []
+    : gameState?.hintSequence?.slice(0, gameState?.guessesMade || 0) || []
 
   // Update countdown and check for new day MORE FREQUENTLY
   useEffect(() => {

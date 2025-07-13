@@ -72,7 +72,7 @@ export function GameInterface({
         alt="Loading..."
         className="animate-spin w-8 h-auto"
       />
-      <p className="text-white text-center mt-4">Loading...</p>
+      <p className="text-white text-center mt-4">Searching tall grass...</p>
     </div>
   )
 

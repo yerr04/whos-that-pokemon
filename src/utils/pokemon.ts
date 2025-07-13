@@ -44,7 +44,7 @@ export function isCloseMatch(guess: string, target: string): boolean {
 export function getRandomMove(moves: any[]): string {
   // Filter to level-up moves only
   const levelUpMoves = moves.filter(moveEntry => 
-    moveEntry.version_group_details.some(detail => 
+    moveEntry.version_group_details.some((detail: { move_learn_method: { name: string } }) => 
       detail.move_learn_method.name === 'level-up'
     )
   );
@@ -105,14 +105,21 @@ export function getEnglishFlavorText(flavorTextEntries: any[]): string {
 }
 
 // Generate randomized hint sequence
-export function generateHintSequence(): HintType[] {
-  // Shuffle the randomizable hints
-  const shuffled = [...RANDOMIZABLE_HINTS].sort(() => Math.random() - 0.5);
+export function generateHintSequence(customRandom?: () => number): HintType[] {
+  const randomFunc = customRandom || Math.random
   
-  // Take first 5 randomized hints + cry + silhouette as the final 2
+  // Shuffle the randomizable hints using the provided random function
+  const shuffled = [...RANDOMIZABLE_HINTS]
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(randomFunc() * (i + 1))
+    ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+  }
+  
+  // Take first 4 randomized hints + cry + silhouette as the final 2
   return [
     ...shuffled.slice(0, 4),
     'cry',        // 6th hint - always cry
     'silhouette'  // 7th hint - always silhouette
-  ];
+  ]
 }
+export type { HintType }

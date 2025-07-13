@@ -9,7 +9,6 @@ export default function DailyChallenge() {
     <GameInterface
       {...gameState}
       title="Daily Challenge"
-      subtitle={`Daily Pokémon #${gameState.pokemonId} • Resets at 10 AM EST`}
       guesses={gameState.guesses}
       timeUntilNext={gameState.timeUntilNext}
       debugMode={gameState.debugMode}
