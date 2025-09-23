@@ -37,18 +37,7 @@ export function Navbar() {
             >
               Unlimited Mode
             </Link>
-            <Link 
-              href="/survival" 
-              className="text-white hover:text-[#55c58d] transition-colors"
-            >
-              Survival Mode
-            </Link>
-            <Link 
-              href="/timed" 
-              className="text-white hover:text-[#55c58d] transition-colors"
-            >
-              Timed Mode
-            </Link>
+
             <Link 
               href="/stats" 
               className="text-white hover:text-[#55c58d] transition-colors"

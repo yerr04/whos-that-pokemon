@@ -1,16 +1,11 @@
 // src/hooks/useGameLogic.ts
 import { useState, useEffect } from 'react'
 import { getPokemon, getSpecies, getEvolutionChain } from '@/lib/pokeapi'
-import { ParsedPokemonInfo, MAX_GUESSES } from '@/types/game'
-import { 
-  computeBST, 
-  getCryUrl, 
-  mapGenerationToRegion, 
-  isCloseMatch,
-  getRandomMove,
-  getEvolutionStage,
-  getEnglishFlavorText
-} from '@/utils/pokemon'
+import { computeBST, getCryUrl, mapGenerationToRegion, getEnglishFlavorText, getRandomMove } from '@/utils/pokemon'
+
+type LoadOptions = {
+  random?: () => number // use seeded RNG for deterministic fields (e.g., move)
+}
 
 export function useGameLogic() {
   const [loading, setLoading] = useState(true)
@@ -23,33 +18,32 @@ export function useGameLogic() {
   const [debugMode, setDebugMode] = useState(false)
 
   // Load Pokemon data for a specific ID
-  const loadPokemonData = async (pokemonId: number) => {
+  const loadPokemonData = async (pokemonId: number, opts?: LoadOptions) => {
     setLoading(true)
     setError(null)
-    
+
     try {
       const pokemon = await getPokemon(pokemonId)
       setTargetName(pokemon.name.toLowerCase())
 
       const species = await getSpecies(pokemon.id)
-      const evolutionChain = await getEvolutionChain(species.evolution_chain.url)
+      const evolutionChain = species.evolution_chain?.url
+        ? await getEvolutionChain(species.evolution_chain.url)
+        : undefined
 
       setInfo({
         bst: computeBST(pokemon),
         cryUrl: getCryUrl(pokemon.name),
         region: mapGenerationToRegion(species.generation.name),
         ability: pokemon.abilities[0]?.ability.name ?? '—',
-        types: pokemon.types
-          .sort((a, b) => a.slot - b.slot)
-          .map((t) => t.type.name),
-        silhouetteUrl:
-          pokemon.sprites.other['official-artwork'].front_default || '',
+        types: pokemon.types.sort((a, b) => a.slot - b.slot).map((t) => t.type.name),
+        silhouetteUrl: pokemon.sprites.other['official-artwork'].front_default || '',
         pokedexEntry: getEnglishFlavorText(species.flavor_text_entries),
-        move: getRandomMove(pokemon.moves),
-        evolutionStage: getEvolutionStage(pokemon.name, evolutionChain),
+        move: getRandomMove(pokemon.moves, opts?.random), // deterministic if provided
         height: pokemon.height,
         weight: pokemon.weight,
-      })
+        // evolutionStage: ... if you already compute it
+      } as any)
     } catch (err: any) {
       console.error(err)
       setError(err.message)

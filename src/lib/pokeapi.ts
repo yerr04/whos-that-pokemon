@@ -101,52 +101,93 @@ export interface EvolutionChain {
 interface CacheEntry<T> {
   data: T;
   timestamp: number;
+  // For stale-while-revalidate
+  refreshing?: boolean;
 }
 
-const cache = new Map<string, CacheEntry<any>>();
-const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+const MAX_ENTRIES = 150;
+const CACHE_DURATION = 30 * 60 * 1000;      // Fresh window: 30 min
+const STALE_DURATION = 60 * 60 * 1000;      // Serve stale up to 1 hr total
 
-function getCachedData<T>(key: string): T | null {
-  const cached = cache.get(key) as CacheEntry<T> | undefined;
-  
-  if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
-    return cached.data;
+const cache = new Map<string, CacheEntry<any>>();
+const inFlight = new Map<string, Promise<any>>();
+
+function touchKey(key: string) {
+  // LRU: reinsert key to mark as most recently used
+  if (!cache.has(key)) return;
+  const entry = cache.get(key)!;
+  cache.delete(key);
+  cache.set(key, entry);
+}
+
+function enforceSizeLimit() {
+  while (cache.size > MAX_ENTRIES) {
+    // Evict oldest (first inserted) – basic LRU
+    const firstKey = cache.keys().next().value;
+    cache.delete(firstKey);
   }
-  
-  // Remove expired entry
-  if (cached) {
-    cache.delete(key);
+}
+
+function getCachedData<T>(key: string): { data: T; fresh: boolean } | null {
+  const entry = cache.get(key) as CacheEntry<T> | undefined;
+  if (!entry) return null;
+
+  const age = Date.now() - entry.timestamp;
+  if (age < CACHE_DURATION) {
+    touchKey(key);
+    return { data: entry.data, fresh: true };
   }
-  
+  if (age < STALE_DURATION) {
+    // Stale but still usable; trigger background refresh if not already
+    if (!entry.refreshing) {
+      entry.refreshing = true;
+      // Fire-and-forget revalidation
+      fetchAndCache<T>(key).finally(() => {
+        const e = cache.get(key);
+        if (e) e.refreshing = false;
+      });
+    }
+    return { data: entry.data, fresh: false };
+  }
+  // Fully expired
+  cache.delete(key);
   return null;
 }
 
 function setCachedData<T>(key: string, data: T): void {
-  cache.set(key, {
-    data,
-    timestamp: Date.now()
-  });
+  cache.set(key, { data, timestamp: Date.now() });
+  enforceSizeLimit();
 }
 
-/** ----- Helper: Typed Fetch with Error Handling and Caching ----- */
-async function fetchJSON<T>(url: string): Promise<T> {
-  // Check cache first
-  const cached = getCachedData<T>(url);
-  if (cached) {
-    return cached;
+// Core network fetch with dedupe
+async function fetchAndCache<T>(url: string, signal?: AbortSignal): Promise<T> {
+  if (inFlight.has(url)) {
+    return inFlight.get(url) as Promise<T>;
   }
+  const p = (async () => {
+    const res = await fetch(url, { signal });
+    if (!res.ok) {
+      // Optional: classify errors
+      throw new Error(`PokeAPI error (${res.status}): ${res.statusText}`);
+    }
+    const json = (await res.json()) as T;
+    setCachedData(url, json);
+    return json;
+  })();
+  inFlight.set(url, p);
+  try {
+    return await p;
+  } finally {
+    inFlight.delete(url);
+  }
+}
 
-  const res = await fetch(url);
-  if (!res.ok) {
-    throw new Error(`PokeAPI error (${res.status}): ${res.statusText}`);
+async function fetchJSON<T>(url: string, opts?: { signal?: AbortSignal; force?: boolean }): Promise<T> {
+  if (!opts?.force) {
+    const cached = getCachedData<T>(url);
+    if (cached) return cached.data;
   }
-  
-  const data = (await res.json()) as T;
-  
-  // Cache the result
-  setCachedData(url, data);
-  
-  return data;
+  return fetchAndCache<T>(url, opts?.signal);
 }
 
 /** ----- Client Functions ----- */
@@ -188,4 +229,29 @@ export function getCacheStats() {
     size: cache.size,
     entries: Array.from(cache.keys())
   };
+}
+
+/**
+ * Prefetch Pokémon data bundle: main data, species info, and evolution chain (if available).
+ * @param id Pokémon numeric ID
+ */
+export function prefetchPokemonBundle(id: number) {
+  void Promise.all([
+    getPokemon(id),
+    getSpecies(id).then(s =>
+      s.evolution_chain?.url ? getEvolutionChain(s.evolution_chain.url) : null
+    )
+  ]).catch(() => {});
+}
+
+/**
+ * Optional: clear only stale fully expired entries (maintenance)
+ */
+export function pruneCache() {
+  const now = Date.now();
+  for (const [key, entry] of cache.entries()) {
+    if (now - entry.timestamp > STALE_DURATION) {
+      cache.delete(key);
+    }
+  }
 }

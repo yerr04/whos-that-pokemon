@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useGameLogic } from './useGameLogic'
 import { getDailyPokemonId, getTimeUntilNextChallenge, getTodaysDateKey } from '@/utils/dailyChallenge'
 import { HintType, MAX_GUESSES } from '@/types/game'
-import { generateHintSequence } from '@/utils/pokemon'  // Fixed import
+import { createSeededRandom, generateHintSequence } from '@/utils/pokemon'
 
 interface DailyGameState {
   dateKey: string
@@ -24,18 +24,13 @@ export function useDailyChallenge() {
   const [timeUntilNext, setTimeUntilNext] = useState(getTimeUntilNextChallenge())
   const [currentDateKey, setCurrentDateKey] = useState(getTodaysDateKey())
 
-  // Generate deterministic hint sequence based on date
-  const generateDailyHintSequence = (dateKey: string): HintType[] => {
-    const seed = dateKey.replace(/-/g, '') // YYYYMMDD
-    let hash = parseInt(seed)
-    
-    const seededRandom = () => {
-      hash = (hash * 1664525 + 1013904223) % Math.pow(2, 32)
-      return (hash / Math.pow(2, 32))
-    }
-    
-    // Use the same hint generation logic as unlimited mode
-    return generateHintSequence(seededRandom)
+  // Generate deterministic hint sequence + RNG based on date+pokemon
+  const makeDailyRandom = (dateKey: string, pokemonId: number) =>
+    createSeededRandom(`${dateKey}:${pokemonId}`)
+
+  const generateDailyHintSequence = (dateKey: string, pokemonId: number): HintType[] => {
+    const rnd = makeDailyRandom(dateKey, pokemonId)
+    return generateHintSequence(rnd)
   }
 
   // Load daily challenge
@@ -50,9 +45,10 @@ export function useDailyChallenge() {
       hintSequence = generateHintSequence() // Truly random for dev
       console.log('Dev mode: forcing new random Pokemon ID:', pokemonId)
     } else {
-      // Use deterministic daily Pokemon (same logic as unlimited but seeded)
+      // For daily mode (not forceNewPokemon)
       pokemonId = getDailyPokemonId()
-      hintSequence = generateDailyHintSequence(todayKey)
+      const seededRandom = makeDailyRandom(todayKey, pokemonId)
+      hintSequence = generateDailyHintSequence(todayKey, pokemonId)
       console.log('Daily Pokemon ID:', pokemonId, 'Hint sequence:', hintSequence)
     }
     
@@ -102,8 +98,8 @@ export function useDailyChallenge() {
     setGameState(currentState)
     setCurrentDateKey(todayKey)
     
-    // Load the Pokemon data using the same logic as unlimited mode
-    await gameLogic.loadPokemonData(pokemonId)
+    // Ensure move selection uses the same deterministic RNG
+    await gameLogic.loadPokemonData(pokemonId, { random: makeDailyRandom(todayKey, pokemonId) })
   }
 
   // Override the base handle guess to include daily state

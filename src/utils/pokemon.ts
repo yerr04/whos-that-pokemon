@@ -1,4 +1,4 @@
-import { Pokemon } from '@/lib/pokeapi'
+import { Pokemon, MoveEntry } from '@/lib/pokeapi'
 import { HintType, RANDOMIZABLE_HINTS, FIXED_FINAL_HINTS } from '@/types/game'
 import Fuse from 'fuse.js'
 
@@ -40,19 +40,27 @@ export function isCloseMatch(guess: string, target: string): boolean {
   return result.length > 0 && result[0].score! <= 0.4;
 }
 
+// Seeded RNG (32-bit LCG) from a string seed
+export function createSeededRandom(seed: string): () => number {
+  let hash = 0
+  for (let i = 0; i < seed.length; i++) {
+    const c = seed.charCodeAt(i)
+    hash = ((hash << 5) - hash) + c
+    hash |= 0 // 32-bit
+  }
+  return () => {
+    hash = (hash * 1664525 + 1013904223) % 2**32
+    const n = hash < 0 ? hash + 2**32 : hash
+    return n / 2**32
+  }
+}
+
 // Get a random learnable move from the Pokemon's moveset
-export function getRandomMove(moves: any[]): string {
-  // Filter to level-up moves only
-  const levelUpMoves = moves.filter(moveEntry => 
-    moveEntry.version_group_details.some((detail: { move_learn_method: { name: string } }) => 
-      detail.move_learn_method.name === 'level-up'
-    )
-  );
-  
-  if (levelUpMoves.length === 0) return '—';
-  
-  const randomMove = levelUpMoves[Math.floor(Math.random() * levelUpMoves.length)];
-  return randomMove.move.name.replace('-', ' ');
+export function getRandomMove(moves: MoveEntry[], customRandom?: () => number): string {
+  if (!moves?.length) return '—'
+  const rnd = customRandom || Math.random
+  const idx = Math.floor(rnd() * moves.length)
+  return moves[idx]?.move?.name || '—'
 }
 
 // Determine evolution stage from evolution chain
