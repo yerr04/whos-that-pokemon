@@ -2,6 +2,8 @@
 import { useState, useEffect } from 'react'
 import { getPokemon, getSpecies, getEvolutionChain } from '@/lib/pokeapi'
 import { computeBST, getCryUrl, mapGenerationToRegion, getEnglishFlavorText, getRandomMove } from '@/utils/pokemon'
+import { MAX_GUESSES } from '@/types/game'
+import { isCloseMatch } from '@/utils/pokemon'
 
 type LoadOptions = {
   random?: () => number // use seeded RNG for deterministic fields (e.g., move)
