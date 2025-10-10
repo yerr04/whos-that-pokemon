@@ -1,9 +1,10 @@
 // src/hooks/useGameLogic.ts
 import { useState, useEffect } from 'react'
 import { getPokemon, getSpecies, getEvolutionChain } from '@/lib/pokeapi'
-import { computeBST, getCryUrl, mapGenerationToRegion, getEnglishFlavorText, getRandomMove } from '@/utils/pokemon'
-import { MAX_GUESSES } from '@/types/game'
+import { computeBST, getCryUrl, mapGenerationToRegion, getEnglishFlavorText, getRandomMove, getEvolutionStage } from '@/utils/pokemon'
+import { MAX_GUESSES, ParsedPokemonInfo } from '@/types/game'
 import { isCloseMatch } from '@/utils/pokemon'
+import { get } from 'http'
 
 type LoadOptions = {
   random?: () => number // use seeded RNG for deterministic fields (e.g., move)
@@ -41,10 +42,10 @@ export function useGameLogic() {
         types: pokemon.types.sort((a, b) => a.slot - b.slot).map((t) => t.type.name),
         silhouetteUrl: pokemon.sprites.other['official-artwork'].front_default || '',
         pokedexEntry: getEnglishFlavorText(species.flavor_text_entries),
-        move: getRandomMove(pokemon.moves, opts?.random), // deterministic if provided
+        move: getRandomMove(pokemon.moves, opts?.random),
         height: pokemon.height,
         weight: pokemon.weight,
-        // evolutionStage: ... if you already compute it
+        evolutionStage: getEvolutionStage(pokemon.name, evolutionChain)
       } as any)
     } catch (err: any) {
       console.error(err)

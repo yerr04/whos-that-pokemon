@@ -13,7 +13,6 @@ export default function DailyChallenge() {
       timeUntilNext={gameState.timeUntilNext}
       debugMode={gameState.debugMode}
       setDebugMode={gameState.setDebugMode}
-      resetGame={gameState.resetDailyChallenge}
     />
   )
 }

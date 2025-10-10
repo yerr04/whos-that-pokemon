@@ -32,12 +32,12 @@ export function capitalize(str: string): string {
 
 export function isCloseMatch(guess: string, target: string): boolean {
   const fuse = new Fuse([target], {
-    threshold: 0.4,
+    threshold: 0.25,
     includeScore: true
   });
   
   const result = fuse.search(guess);
-  return result.length > 0 && result[0].score! <= 0.4;
+  return result.length > 0 && result[0].score! <= 0.25;
 }
 
 // Seeded RNG (32-bit LCG) from a string seed

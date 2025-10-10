@@ -124,7 +124,9 @@ function enforceSizeLimit() {
   while (cache.size > MAX_ENTRIES) {
     // Evict oldest (first inserted) – basic LRU
     const firstKey = cache.keys().next().value;
-    cache.delete(firstKey);
+    if (firstKey !== undefined) {
+      cache.delete(firstKey);
+    }
   }
 }
 

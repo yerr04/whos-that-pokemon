@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useGameLogic } from './useGameLogic'
 import { getDailyPokemonId, getTimeUntilNextChallenge, getTodaysDateKey } from '@/utils/dailyChallenge'
 import { HintType, MAX_GUESSES } from '@/types/game'
-import { createSeededRandom, generateHintSequence } from '@/utils/pokemon'
+import { createSeededRandom, generateHintSequence, isCloseMatch } from '@/utils/pokemon'
 
 interface DailyGameState {
   dateKey: string
@@ -107,7 +107,7 @@ export function useDailyChallenge() {
     if (!gameState || gameState.completed) return
 
     const newGuessesMade = gameState.guessesMade + 1
-    const isCorrect = gameLogic.currentGuess.toLowerCase() === gameLogic.targetName
+    const isCorrect = isCloseMatch(gameLogic.currentGuess.toLowerCase(), gameLogic.targetName)
     
     const newState: DailyGameState = {
       ...gameState,
