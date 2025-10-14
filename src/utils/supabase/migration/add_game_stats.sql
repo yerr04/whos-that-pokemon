@@ -239,6 +239,3 @@ select
 from auth.users
 where id not in (select id from public.profiles)
 on conflict (id) do nothing;
-
--- Grant permissions
-grant execute on function public.apply_game_result to authenticated;

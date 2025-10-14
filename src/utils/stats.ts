@@ -52,7 +52,7 @@ export async function recordGameResult({
     p_hints_revealed: hintsRevealed,
     p_hint_type_on_win: hintTypeOnWin,
     p_daily_date: dailyDateKey || null,
-    p_hint_sequence: hintSequence,
+    p_hint_sequence: hintSequence, // Make sure this is a string array, not a JSON object
     p_pokemon_id: pokemonId,
   });
 
