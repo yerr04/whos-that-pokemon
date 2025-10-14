@@ -1,25 +1,35 @@
 "use client"
-import { useRouter } from "next/navigation"
 import { createClient } from "@/utils/supabase/client"
+import { useRouter } from "next/navigation"
+import GlareBackgroundContainer from "@/components/GlareBackgroundContainer"
 
 export default function SignInPage() {
   const router = useRouter()
   const supabase = createClient()
 
   const signInWithGoogle = async () => {
-    await supabase.auth.signInWithOAuth({
+    const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback`,
       },
     })
+    
+    if (error) {
+      console.error('Sign in error:', error)
+    }
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center">
-      <button onClick={signInWithGoogle} className="px-4 py-2 bg-blue-600 text-white rounded">
-        Continue with Google
-      </button>
-    </main>
+    <GlareBackgroundContainer>
+      <main className="min-h-screen flex items-center justify-center">
+        <button 
+          onClick={signInWithGoogle} 
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+        >
+          Continue with Google
+        </button>
+      </main>
+    </GlareBackgroundContainer>
   )
 }

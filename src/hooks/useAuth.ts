@@ -1,31 +1,49 @@
-import { useEffect, useState } from 'react'
-import { createClient } from '@/utils/supabase/client'
-import type { User } from '@supabase/supabase-js'
+// whos-that-pokemon/src/hooks/useAuth.ts
+import { useCallback, useEffect, useState } from 'react';
+import type { User } from '@supabase/supabase-js';
+import { useSupabase } from '@/components/SupabaseProvider';
 
 export function useAuth() {
-  const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
-  const supabase = createClient()
+  const { supabase, session } = useSupabase();
+  const [user, setUser] = useState<User | null>(session?.user ?? null);
+  const [loading, setLoading] = useState(!session);
+
+  const refreshUser = useCallback(async () => {
+    setLoading(true);
+
+    const { data, error } = await supabase.auth.getUser();
+
+    if (error) {
+      if (error.name !== 'AuthSessionMissingError' && error.status !== 401) {
+        console.error('Failed to fetch authenticated user:', error);
+      }
+
+      setUser(null);
+    } else {
+      setUser(data.user ?? null);
+    }
+
+    setLoading(false);
+  }, [supabase]);
 
   useEffect(() => {
-    const loadUser = async () => {
-      const { data } = await supabase.auth.getUser()
-      setUser(data.user)
-      setLoading(false)
-    }
-    
-    loadUser()
+    setUser(session?.user ?? null);
+    setLoading(!session);
+  }, [session]);
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
 
-    return () => {
-      authListener.subscription.unsubscribe()
-    }
-  }, [supabase])
+  useEffect(() => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
+      refreshUser();
+    });
 
-  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture
+    return () => authListener.subscription.unsubscribe();
+  }, [supabase, refreshUser]);
 
-  return { user, loading, avatarUrl }
+  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+
+  return { user, loading, avatarUrl, refreshUser };
 }

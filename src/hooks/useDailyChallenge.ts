@@ -4,6 +4,7 @@ import { useGameLogic } from './useGameLogic'
 import { getDailyPokemonId, getTimeUntilNextChallenge, getTodaysDateKey } from '@/utils/dailyChallenge'
 import { HintType, MAX_GUESSES } from '@/types/game'
 import { createSeededRandom, generateHintSequence, isCloseMatch } from '@/utils/pokemon'
+import { recordGameResult } from '@/utils/stats'
 
 interface DailyGameState {
   dateKey: string
@@ -103,7 +104,7 @@ export function useDailyChallenge() {
   }
 
   // Override the base handle guess to include daily state
-  const handleGuess = () => {
+  const handleGuess = async () => {
     if (!gameState || gameState.completed) return
 
     const newGuessesMade = gameState.guessesMade + 1
@@ -120,6 +121,24 @@ export function useDailyChallenge() {
     setGameState(newState)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newState))
     gameLogic.setCurrentGuess('')
+    
+    // Record game result when completed
+    if (isCorrect || newGuessesMade >= MAX_GUESSES) {
+      await recordGameResult({
+        mode: 'daily',
+        pokemonId: gameState.pokemonId,
+        guessesMade: newGuessesMade,
+        hintsRevealed: Math.min(newGuessesMade, (gameState.hintSequence?.length ?? 0)),
+        hintSequence: gameState.hintSequence,
+        won: isCorrect,
+        hintTypeOnWin: isCorrect
+          ? gameState.hintSequence[Math.max(newGuessesMade - 1, 0)]
+          : null,
+        dailyDateKey: currentDateKey,
+      }).catch(err => {
+        console.error('Failed to record daily game result:', err)
+      })
+    }
     
     if (isCorrect) {
       // Trigger win state in base hook
