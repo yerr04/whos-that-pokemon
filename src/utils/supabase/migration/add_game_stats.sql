@@ -4,13 +4,20 @@ create table if not exists public.profiles (
   email text,
   avatar_url text,
   full_name text,
+  created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
 
--- Raw game sessions (one row per finished game)
-create type public.game_mode as enum ('daily', 'unlimited');
+-- Create enum type if it doesn't exist
+do $$ 
+begin
+  if not exists (select 1 from pg_type where typname = 'game_mode') then
+    create type public.game_mode as enum ('daily', 'unlimited');
+  end if;
+end $$;
 
-create table public.game_sessions (
+-- Raw game sessions (one row per finished game)
+create table if not exists public.game_sessions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   mode public.game_mode not null,
@@ -29,92 +36,132 @@ create unique index if not exists game_sessions_user_daily_unique
   where mode = 'daily';
 
 -- Aggregated stats per user+mode
-create table public.user_mode_totals (
+create table if not exists public.user_mode_totals (
   user_id uuid not null references auth.users(id) on delete cascade,
   mode public.game_mode not null,
-  games_played int not null default 0,
-  wins int not null default 0,
+  total_games int not null default 0,
+  total_wins int not null default 0,
+  win_rate decimal(5,4) not null default 0,
   current_streak int not null default 0,
-  longest_streak int not null default 0,
-  total_correct int not null default 0,
+  max_streak int not null default 0,
   total_hints_used int not null default 0,
   updated_at timestamptz not null default now(),
   primary key (user_id, mode)
 );
 
 -- Hint performance aggregates
-create table public.user_hint_totals (
+create table if not exists public.user_hint_totals (
   user_id uuid not null references auth.users(id) on delete cascade,
   hint_type text not null,
   wins_with_hint int not null default 0,
-  guesses_with_hint int not null default 0,
+  total_uses int not null default 0,
   primary key (user_id, hint_type)
 );
 
 -- Function to apply one finished game to aggregates
 create or replace function public.apply_game_result(
-  p_mode text,
+  p_mode public.game_mode,
   p_user_id uuid,
   p_win boolean,
   p_guesses_made int,
   p_hints_revealed int,
   p_hint_type_on_win text,
   p_daily_date text,
-  p_hint_sequence jsonb,
+  p_hint_sequence text[],
   p_pokemon_id int
 ) returns void
 language plpgsql
+security definer
 as $$
 declare
-  prev_streak int;
-  new_streak int;
+  hint_item text;
+  daily_date_val date;
 begin
+  -- Parse daily_date if provided
+  if p_daily_date is not null and p_daily_date != '' then
+    daily_date_val := p_daily_date::date;
+  end if;
+
+  -- Insert game session
   insert into public.game_sessions (
     user_id, mode, win, guesses_made, hints_revealed,
     hint_type_on_win, hint_sequence, daily_date, pokemon_id
   ) values (
-    p_user_id, p_mode, p_win, p_guesses_made, p_hints_revealed,
-    p_hint_type_on_win, coalesce(current_setting('app.hint_sequence', true)::text[], '{}'),
-    p_daily_date, nullif(current_setting('app.pokemon_id', true), '')::int
-  );
+    p_user_id, 
+    p_mode, 
+    p_win, 
+    p_guesses_made, 
+    p_hints_revealed,
+    p_hint_type_on_win, 
+    p_hint_sequence,
+    daily_date_val, 
+    p_pokemon_id
+  )
+  on conflict (user_id, daily_date) 
+  where mode = 'daily'
+  do nothing;
 
-  insert into public.user_mode_totals as agg (
-    user_id, mode, games_played, wins, current_streak, longest_streak,
-    total_correct, total_hints_used, updated_at
+  -- Update mode totals
+  insert into public.user_mode_totals (
+    user_id, mode, total_games, total_wins, win_rate, 
+    current_streak, max_streak, total_hints_used, updated_at
   )
   values (
-    p_user_id, p_mode, 1, case when p_win then 1 else 0 end,
+    p_user_id, 
+    p_mode, 
+    1, 
+    case when p_win then 1 else 0 end,
+    case when p_win then 1.0 else 0.0 end,
     case when p_win then 1 else 0 end,
     case when p_win then 1 else 0 end,
-    case when p_win then 1 else 0 end,
-    case when p_win then p_hints_revealed else 0 end,
+    p_hints_revealed,
     now()
   )
   on conflict (user_id, mode)
   do update set
-    games_played = agg.games_played + 1,
-    wins = agg.wins + case when p_win then 1 else 0 end,
-    total_correct = agg.total_correct + case when p_win then 1 else 0 end,
-    total_hints_used = agg.total_hints_used + case when p_win then p_hints_revealed else 0 end,
-    current_streak = case
-      when p_mode = 'daily' then
-        case when p_win then agg.current_streak + 1 else 0 end
-      else
-        case when p_win then agg.current_streak + 1 else 0 end
+    total_games = user_mode_totals.total_games + 1,
+    total_wins = user_mode_totals.total_wins + case when p_win then 1 else 0 end,
+    win_rate = (user_mode_totals.total_wins + case when p_win then 1 else 0 end)::decimal / 
+               (user_mode_totals.total_games + 1),
+    current_streak = case 
+      when p_win then user_mode_totals.current_streak + 1 
+      else 0 
     end,
-    longest_streak = greatest(agg.longest_streak,
-      case when p_win then agg.current_streak + 1 else agg.longest_streak end),
+    max_streak = greatest(
+      user_mode_totals.max_streak,
+      case when p_win then user_mode_totals.current_streak + 1 else user_mode_totals.current_streak end
+    ),
+    total_hints_used = user_mode_totals.total_hints_used + p_hints_revealed,
     updated_at = now();
 
-  if p_hint_type_on_win is not null then
-    insert into public.user_hint_totals as hint (
-      user_id, hint_type, wins_with_hint, guesses_with_hint
+  -- Update hint totals
+  if p_hint_sequence is not null then
+    foreach hint_item in array p_hint_sequence
+    loop
+      insert into public.user_hint_totals (
+        user_id, hint_type, wins_with_hint, total_uses
+      )
+      values (
+        p_user_id, 
+        hint_item, 
+        case when p_win then 1 else 0 end, 
+        1
+      )
+      on conflict (user_id, hint_type)
+      do update set
+        wins_with_hint = user_hint_totals.wins_with_hint + case when p_win then 1 else 0 end,
+        total_uses = user_hint_totals.total_uses + 1;
+    end loop;
+  end if;
+
+  if p_win and p_hint_type_on_win is not null then
+    insert into public.user_hint_totals (
+      user_id, hint_type, wins_with_hint, total_uses
     )
-    values (p_user_id, p_hint_type_on_win, case when p_win then 1 else 0 end, p_guesses_made)
+    values (p_user_id, p_hint_type_on_win, 1, 0)
     on conflict (user_id, hint_type)
     do update set
-      wins_with_hint = hint.wins_with_hint + case when p_win then 1 else 0 end,
-      guesses_with_hint = hint.guesses_with_hint + p_guesses_made;
+      wins_with_hint = user_hint_totals.wins_with_hint + 1;
   end if;
 end;
 $$;
@@ -123,45 +170,75 @@ $$;
 alter table public.game_sessions enable row level security;
 alter table public.user_mode_totals enable row level security;
 alter table public.user_hint_totals enable row level security;
+alter table public.profiles enable row level security;
 
+drop policy if exists "Users can manage their sessions" on public.game_sessions;
 create policy "Users can manage their sessions"
   on public.game_sessions
+  for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+drop policy if exists "Users can read/write their totals" on public.user_mode_totals;
 create policy "Users can read/write their totals"
   on public.user_mode_totals
+  for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
+drop policy if exists "Users can read/write their hint totals" on public.user_hint_totals;
 create policy "Users can read/write their hint totals"
   on public.user_hint_totals
+  for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
-  
-alter table public.profiles enable row level security;
+
+drop policy if exists "Users can manage their profile" on public.profiles;
 create policy "Users can manage their profile"
   on public.profiles
+  for all
   using (auth.uid() = id)
   with check (auth.uid() = id);
 
--- Function to handle new user
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
-BEGIN
-  INSERT INTO public.profiles (id, email, avatar_url, full_name)
-  VALUES (
-    NEW.id,
-    NEW.email,
-    NEW.raw_user_meta_data->>'avatar_url',
-    NEW.raw_user_meta_data->>'full_name'
-  );
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- Function to handle new user profile creation
+create or replace function public.handle_new_user()
+returns trigger 
+language plpgsql
+security definer
+as $$
+begin
+  insert into public.profiles (id, email, avatar_url, full_name, created_at)
+  values (
+    new.id,
+    new.email,
+    new.raw_user_meta_data->>'avatar_url',
+    new.raw_user_meta_data->>'full_name',
+    now()
+  )
+  on conflict (id) do nothing;
+  
+  return new;
+end;
+$$;
 
--- Trigger
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION public.handle_new_user();
+-- Trigger for new user signup
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row
+  execute function public.handle_new_user();
+
+-- Backfill existing users (run separately if needed)
+insert into public.profiles (id, email, avatar_url, full_name, created_at)
+select 
+  id,
+  email,
+  raw_user_meta_data->>'avatar_url',
+  raw_user_meta_data->>'full_name',
+  created_at
+from auth.users
+where id not in (select id from public.profiles)
+on conflict (id) do nothing;
+
+-- Grant permissions
+grant execute on function public.apply_game_result to authenticated;

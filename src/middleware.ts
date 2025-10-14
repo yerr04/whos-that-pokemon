@@ -43,7 +43,9 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/auth/sign-in'
     const redirect = NextResponse.redirect(url)
-    redirect.cookies.setAll(response.cookies.getAll())
+    response.cookies.getAll().forEach(cookie => {
+      redirect.cookies.set(cookie.name, cookie.value)
+    })
     return redirect
   }
 
@@ -51,7 +53,9 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone()
     url.pathname = '/'
     const redirect = NextResponse.redirect(url)
-    redirect.cookies.setAll(response.cookies.getAll())
+    response.cookies.getAll().forEach(cookie => {
+      redirect.cookies.set(cookie.name, cookie.value)
+    })
     return redirect
   }
 

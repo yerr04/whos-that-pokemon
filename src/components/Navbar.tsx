@@ -24,9 +24,6 @@ export function Navbar() {
             <Link href="/unlimited" className="text-white hover:text-[#55c58d] transition-colors">
               Unlimited Mode
             </Link>
-            <Link href="/stats" className="text-white hover:text-[#55c58d] transition-colors">
-              Stats
-            </Link>
 
             {user ? (
               <Link href="/profile" className="relative h-10 w-10 overflow-hidden rounded-full ring-2 ring-cyan-500">
@@ -72,27 +69,6 @@ export function Navbar() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Unlimited Mode
-              </Link>
-              <Link 
-                href="/survival" 
-                className="block px-3 py-2 text-white hover:text-[#55c58d] transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Survival Mode
-              </Link>
-              <Link 
-                href="/timed" 
-                className="block px-3 py-2 text-white hover:text-[#55c58d] transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Timed Mode
-              </Link>
-              <Link 
-                href="/stats" 
-                className="block px-3 py-2 text-white hover:text-[#55c58d] transition-colors"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Stats
               </Link>
               {user ? (
                 <Link href="/profile" className="flex items-center gap-3 px-3 py-2 text-white hover:text-[#55c58d]" onClick={() => setIsMenuOpen(false)}>

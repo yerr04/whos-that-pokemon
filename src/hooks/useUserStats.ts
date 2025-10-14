@@ -31,19 +31,23 @@ export function useUserStats() {
       return;
     }
 
-    const supabase = createClient();
+    const fetchUserStats = async () => {
+      const supabase = await createClient();
 
-    Promise.all([
-      supabase.from('user_mode_totals').select('*'),
-      supabase.from('user_hint_totals').select('*').order('wins_with_hint', { ascending: false }),
-    ]).then(([modeRes, hintRes]) => {
-      setModeTotals(modeRes.data ?? []);
-      setHintTotals(hintRes.data ?? []);
-      setLoading(false);
-    }).catch((err) => {
-      console.error('Error fetching user stats:', err);
-      setLoading(false);
-    });
+      Promise.all([
+        supabase.from('user_mode_totals').select('*'),
+        supabase.from('user_hint_totals').select('*').order('wins_with_hint', { ascending: false }),
+      ]).then(([modeRes, hintRes]) => {
+        setModeTotals(modeRes.data ?? []);
+        setHintTotals(hintRes.data ?? []);
+        setLoading(false);
+      }).catch((err) => {
+        console.error('Error fetching user stats:', err);
+        setLoading(false);
+      });
+    };
+
+    fetchUserStats();
   }, [user]);
 
   return { loading, modeTotals, hintTotals };
