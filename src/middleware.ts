@@ -11,11 +11,16 @@ const derivedSupabaseCookie = projectRefMatch
 const FALLBACK_COOKIES = ["sb-access-token", "sb-refresh-token"]
 
 function hasSupabaseSession(request: NextRequest) {
-  if (derivedSupabaseCookie && request.cookies.has(derivedSupabaseCookie)) {
+  if (
+    derivedSupabaseCookie &&
+    request.cookies.get(derivedSupabaseCookie) !== undefined
+  ) {
     return true
   }
 
-  return FALLBACK_COOKIES.some(cookieName => request.cookies.has(cookieName))
+  return FALLBACK_COOKIES.some(
+    cookieName => request.cookies.get(cookieName) !== undefined
+  )
 }
 
 function isProtectedPath(pathname: string) {
