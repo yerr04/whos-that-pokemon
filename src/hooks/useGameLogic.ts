@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { getPokemon, getSpecies, getEvolutionChain } from '@/lib/pokeapi'
 import { computeBST, getCryUrl, mapGenerationToRegion, getEnglishFlavorText, getRandomMove, getEvolutionStage } from '@/utils/pokemon'
 import { MAX_GUESSES, ParsedPokemonInfo } from '@/types/game'
+import { calcEffectiveness } from '@/lib/typeEffectiveness'
 import { isCloseMatch } from '@/utils/pokemon'
 import { get } from 'http'
 
