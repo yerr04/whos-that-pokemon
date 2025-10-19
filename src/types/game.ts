@@ -10,7 +10,6 @@ export type HintType =
   | 'weight'
   | 'cry'
   | 'silhouette'
-  | "weakness"
 
 export interface ParsedPokemonInfo {
   bst: number
@@ -24,13 +23,6 @@ export interface ParsedPokemonInfo {
   evolutionStage: string
   height: number
   weight: number
-  weakness: {
-    quadWeak: string[],
-    weak: string[],
-    resist: string[],
-    quadResist: string[],
-    immune: string[],
-  }
 }
 
 export const RANDOMIZABLE_HINTS: HintType[] = [
@@ -43,7 +35,6 @@ export const RANDOMIZABLE_HINTS: HintType[] = [
   'evolution',
   'height',
   'weight',
-  "weakness",
 ]
 
 export const FIXED_FINAL_HINTS: HintType[] = ['cry', 'silhouette']
