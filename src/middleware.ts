@@ -1,76 +1,54 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { NextResponse, type NextRequest } from "next/server"
 
-export async function middleware(request: NextRequest) {
-  let response = NextResponse.next({
-    request: { headers: request.headers },
-  })
+const PROTECTED_PREFIXES = ["/profile", "/stats"]
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => {
-            request.cookies.set(name, value)
-          })
+const projectRefMatch =
+  process.env.NEXT_PUBLIC_SUPABASE_URL?.match(/https:\/\/([^.]+)\.supabase\.co/i)
+const derivedSupabaseCookie = projectRefMatch
+  ? `sb-${projectRefMatch[1]}-auth-token`
+  : undefined
 
-          response = NextResponse.next({
-            request: { headers: request.headers },
-          })
+const FALLBACK_COOKIES = ["sb-access-token", "sb-refresh-token"]
 
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options)
-          })
-        },
-      },
+function hasSupabaseSession(request: NextRequest) {
+  if (derivedSupabaseCookie && request.cookies.has(derivedSupabaseCookie)) {
+    return true
+  }
+
+  return FALLBACK_COOKIES.some(cookieName => request.cookies.has(cookieName))
+}
+
+function isProtectedPath(pathname: string) {
+  return PROTECTED_PREFIXES.some(prefix => pathname.startsWith(prefix))
+}
+
+export function middleware(request: NextRequest) {
+  const { pathname, search } = request.nextUrl
+  const authenticated = hasSupabaseSession(request)
+
+  if (!authenticated && isProtectedPath(pathname)) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/auth/sign-in"
+    const redirectTo = `${pathname}${search}`
+    if (redirectTo !== "/" && redirectTo !== "/auth/sign-in") {
+      url.searchParams.set("redirectTo", redirectTo)
     }
-  )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  const requiresAuth =
-    request.nextUrl.pathname.startsWith('/profile') ||
-    request.nextUrl.pathname.startsWith('/stats')
-
-  if (!user && requiresAuth) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/auth/sign-in'
-    const redirect = NextResponse.redirect(url)
-    response.cookies.getAll().forEach(cookie => {
-      redirect.cookies.set(cookie.name, cookie.value)
-    })
-    return redirect
+    return NextResponse.redirect(url)
   }
 
-  if (user && request.nextUrl.pathname.startsWith('/auth/sign-in')) {
+  if (authenticated && pathname.startsWith("/auth/sign-in")) {
     const url = request.nextUrl.clone()
-    url.pathname = '/'
-    const redirect = NextResponse.redirect(url)
-    response.cookies.getAll().forEach(cookie => {
-      redirect.cookies.set(cookie.name, cookie.value)
-    })
-    return redirect
+    url.pathname = "/"
+    url.search = ""
+    return NextResponse.redirect(url)
   }
 
-  return response
+  return NextResponse.next()
 }
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public assets (images, etc.)
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 }
