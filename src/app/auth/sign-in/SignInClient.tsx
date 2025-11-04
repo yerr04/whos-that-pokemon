@@ -7,10 +7,13 @@ export default function SignInClient() {
   const supabase = createClient()
 
   const signInWithGoogle = async () => {
+    const params = new URLSearchParams(window.location.search)
+    const redirectTo = params.get("redirectTo")
+    const nextPath = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/"
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`,
       },
     })
 

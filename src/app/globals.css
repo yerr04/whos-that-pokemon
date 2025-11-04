@@ -1,10 +1,10 @@
 @import "tailwindcss";
 
-/* Pokemon Emerald font declaration */
+/* Noto Sans JP variable font */
 @font-face {
-  font-family: 'Pokemon Emerald';
-  src: url('/pokemon-emerald.otf.woff2') format('woff2');
-  font-weight: normal;
+  font-family: 'Noto Sans JP';
+  src: url('/Figtree-Bold.ttf') format('truetype');
+  font-weight: 100 900; /* variable weight axis */
   font-style: normal;
   font-display: swap;
 }
@@ -12,7 +12,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --font-pokemon: 'Pokemon Emerald', Arial, Helvetica, sans-serif;
+  --font-pokemon: 'Noto Sans JP', Arial, Helvetica, sans-serif;
 }
 
 @theme inline {
@@ -67,4 +67,41 @@ html, body {
 }
 .animate-pulse-glow {
   animation: pulse-glow 3s ease-in-out infinite;
+}
+
+/* app/globals.css */
+@layer base {
+  @property --angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: true;
+  }
+}
+
+/* app/globals.css */
+@layer components {
+  .fancy-border {
+    position: relative;
+  }
+  .fancy-border::before,
+  .fancy-border::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px; /* full */
+    padding: 2px;          /* border thickness */
+    background: conic-gradient(
+      from var(--angle),
+      #ff4545, #00ff99, #006aff, #ff0095, #ff4545
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+  }
+  .fancy-border::before {
+    filter: blur(24px);
+    opacity: 0.5;
+  }
 }

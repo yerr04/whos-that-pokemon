@@ -41,7 +41,7 @@ export function useGameLogic() {
         ability: pokemon.abilities[0]?.ability.name ?? '—',
         types: pokemon.types.sort((a, b) => a.slot - b.slot).map((t) => t.type.name),
         silhouetteUrl: pokemon.sprites.other['official-artwork'].front_default || '',
-        pokedexEntry: getEnglishFlavorText(species.flavor_text_entries),
+        pokedexEntry: getEnglishFlavorText(species.flavor_text_entries, pokemon.name), // pass name for redaction
         move: getRandomMove(pokemon.moves, opts?.random),
         height: pokemon.height,
         weight: pokemon.weight,

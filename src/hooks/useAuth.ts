@@ -4,9 +4,9 @@ import type { User } from '@supabase/supabase-js';
 import { useSupabase } from '@/components/SupabaseProvider';
 
 export function useAuth() {
-  const { supabase, session } = useSupabase();
-  const [user, setUser] = useState<User | null>(session?.user ?? null);
-  const [loading, setLoading] = useState(!session);
+  const { supabase, initialUser } = useSupabase();
+  const [user, setUser] = useState<User | null>(initialUser);
+  const [loading, setLoading] = useState(initialUser == null);
 
   const refreshUser = useCallback(async () => {
     setLoading(true);
@@ -27,9 +27,9 @@ export function useAuth() {
   }, [supabase]);
 
   useEffect(() => {
-    setUser(session?.user ?? null);
-    setLoading(!session);
-  }, [session]);
+    setUser(initialUser ?? null);
+    setLoading(initialUser == null);
+  }, [initialUser]);
 
   useEffect(() => {
     refreshUser();

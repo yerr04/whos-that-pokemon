@@ -104,12 +104,27 @@ export function formatWeight(hectograms: number): string {
   return `${kg}kg (${lbs} lbs)`;
 }
 
+function escapeRegExp(s: string) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function redactPokemonName(text: string, name: string) {
+  const tokens = name.split(/[\s\-\.'’]+/).filter(Boolean).map(escapeRegExp)
+  if (!tokens.length) return text
+  const sep = `[\\s\\-.'’]*`
+  const pattern = `\\b${tokens.join(sep)}\\b('s)?`
+  const re = new RegExp(pattern, 'gi')
+  // Preserve possessive 's if present
+  return text.replace(re, (_m, s) => `This pokemon${s ?? ''}`)
+}
+
 // Get English flavor text from species data
-export function getEnglishFlavorText(flavorTextEntries: any[]): string {
-  const englishEntry = flavorTextEntries.find(entry => 
-    entry.language.name === 'en'
-  );
-  return englishEntry?.flavor_text.replace(/\f/g, ' ') || '—';
+export function getEnglishFlavorText(flavorTextEntries: any[], pokemonName?: string): string {
+  const englishEntry = flavorTextEntries.find(entry => entry.language.name === 'en')
+  const raw = englishEntry?.flavor_text ?? ''
+  let text = raw.replace(/\f/g, ' ')
+  if (pokemonName) text = redactPokemonName(text, pokemonName)
+  return text || '—'
 }
 
 // Generate randomized hint sequence

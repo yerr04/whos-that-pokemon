@@ -1,88 +1,57 @@
 // src/utils/dailyChallenge.ts
-export function getDailyPokemonId(): number {
-  const now = new Date()
-  const est = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}))
-  
-  console.log('Current time:', now.toISOString())
-  console.log('EST time:', est.toISOString())
-  console.log('EST hours:', est.getHours())
-  
-  // If it's before 10 AM, use previous day
-  if (est.getHours() < 10) {
-    est.setDate(est.getDate() - 1)
-    console.log('Before 10 AM, using previous day:', est.toISOString())
-  }
-  
-  // Use date as seed for random Pokemon generation
-  const dateString = est.toISOString().split('T')[0] // YYYY-MM-DD
-  console.log('Date string:', dateString)
-  
-  // Create a more robust seeded random function using the date
-  const seed = dateString.replace(/-/g, '') // YYYYMMDD
-  let hash = 0
-  for (let i = 0; i < seed.length; i++) {
-    const char = seed.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash = hash & hash // Convert to 32bit integer
-  }
-  
-  // Use the same random generation algorithm as unlimited mode
-  const seededRandom = () => {
-    hash = (hash * 1664525 + 1013904223) % Math.pow(2, 32)
-    return Math.abs(hash) / Math.pow(2, 32)
-  }
-  
-  // Generate multiple random calls to get better distribution
-  // (same pattern as unlimited mode would naturally do)
-  seededRandom() // Throw away first value for better randomness
-  seededRandom() // Throw away second value
-  
-  // Generate random Pokemon ID using the EXACT same logic as unlimited mode
-  const pokemonId = Math.floor(seededRandom() * 1025) + 1
-  
-  console.log('Seed:', seed)
-  console.log('Hash:', hash)
-  console.log('Pokemon ID:', pokemonId)
-  
-  return pokemonId
+
+// DST-safe "now in ET" without relying on ISO date (which is UTC)
+const TZ = 'America/New_York'
+const ROLLOVER_HOUR_ET = 10 // 10 AM ET
+
+function zonedNow(now: Date = new Date()) {
+  // Convert to a Date that represents the same wall-clock time in TZ
+  const inv = new Date(now.toLocaleString('en-US', { timeZone: TZ }))
+  const diff = now.getTime() - inv.getTime()
+  return new Date(now.getTime() - diff) // this behaves like "now in TZ"
 }
 
-export function getTimeUntilNextChallenge(): { hours: number; minutes: number; seconds: number } {
-  const now = new Date()
-  const est = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}))
-  
-  // Next 10 AM EST
-  const nextReset = new Date(est)
-  nextReset.setHours(10, 0, 0, 0)
-  
-  // If it's past 10 AM today, next reset is tomorrow
-  if (est.getHours() >= 10) {
-    nextReset.setDate(nextReset.getDate() + 1)
-  }
-  
-  const diff = nextReset.getTime() - est.getTime()
-  
+function ymd(date: Date) {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
+// Returns YYYY-MM-DD for the current challenge date (flips at 10:00 AM ET)
+export function getTodaysDateKey(now: Date = new Date()): string {
+  const et = zonedNow(now)
+  const boundary = new Date(et)
+  boundary.setHours(ROLLOVER_HOUR_ET, 0, 0, 0)
+  const base = et < boundary ? new Date(et.getTime() - 24 * 60 * 60 * 1000) : et
+  return ymd(base)
+}
+
+// Time until next rollover (10:00 AM ET)
+export function getTimeUntilNextChallenge(now: Date = new Date()): { hours: number; minutes: number; seconds: number } {
+  const et = zonedNow(now)
+  const next = new Date(et)
+  next.setHours(ROLLOVER_HOUR_ET, 0, 0, 0)
+  if (et >= next) next.setDate(next.getDate() + 1)
+  const diff = next.getTime() - et.getTime()
   return {
     hours: Math.floor(diff / (1000 * 60 * 60)),
     minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
-    seconds: Math.floor((diff % (1000 * 60)) / 1000)
+    seconds: Math.floor((diff % (1000 * 60)) / 1000),
   }
 }
 
-export function getTodaysDateKey(): string {
-  const now = new Date()
-  const est = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}))
-  
-  console.log('Getting date key - EST time:', est.toISOString())
-  console.log('EST hours:', est.getHours())
-  
-  if (est.getHours() < 10) {
-    est.setDate(est.getDate() - 1)
-    console.log('Before 10 AM, using previous day for date key:', est.toISOString())
+// Deterministic daily Pokémon ID derived ONLY from the dateKey
+export function getDailyPokemonId(dateKey?: string): number {
+  const key = dateKey ?? getTodaysDateKey()
+
+  // FNV-1a 32-bit hash for stability
+  let h = 0x811c9dc5
+  for (let i = 0; i < key.length; i++) {
+    h ^= key.charCodeAt(i)
+    h = Math.imul(h, 0x01000193) >>> 0
   }
-  
-  const dateKey = est.toISOString().split('T')[0]
-  console.log('Date key:', dateKey)
-  
-  return dateKey
+
+  // Map to 1..1025
+  return (h % 1025) + 1
 }

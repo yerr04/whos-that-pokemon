@@ -1,7 +1,7 @@
 // src/hooks/useDailyChallenge.ts
 import { useState, useEffect } from 'react'
 import { useGameLogic } from './useGameLogic'
-import { getDailyPokemonId, getTimeUntilNextChallenge, getTodaysDateKey } from '@/utils/dailyChallenge'
+import { getTodaysDateKey, getDailyPokemonId, getTimeUntilNextChallenge } from '@/utils/dailyChallenge'
 import { HintType, MAX_GUESSES } from '@/types/game'
 import { createSeededRandom, generateHintSequence, isCloseMatch } from '@/utils/pokemon'
 import { recordGameResult } from '@/utils/stats'
@@ -47,7 +47,7 @@ export function useDailyChallenge() {
       console.log('Dev mode: forcing new random Pokemon ID:', pokemonId)
     } else {
       // For daily mode (not forceNewPokemon)
-      pokemonId = getDailyPokemonId()
+      pokemonId = getDailyPokemonId(todayKey)
       const seededRandom = makeDailyRandom(todayKey, pokemonId)
       hintSequence = generateDailyHintSequence(todayKey, pokemonId)
       console.log('Daily Pokemon ID:', pokemonId, 'Hint sequence:', hintSequence)

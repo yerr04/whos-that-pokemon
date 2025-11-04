@@ -9,7 +9,7 @@ interface HintBlockProps {
 
 export function HintBlock({ type, info, win = false }: HintBlockProps) {
   const commonCls =
-    'bg-transparent border text-[#F2F2F2] px-3 py-2 rounded-lg text-center'
+    'bg-white text-black px-3 py-2 rounded-full text-center shadow-md w-full py-4'
 
   switch (type) {
     case 'bst':

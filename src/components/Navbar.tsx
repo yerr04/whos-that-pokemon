@@ -1,12 +1,25 @@
 'use client'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useState } from 'react'
-import { useAuth } from '@/hooks/useAuth'
+import type { User } from '@supabase/supabase-js'
+import { createClient } from '@/utils/supabase/client'
 
-export function Navbar() {
+type Props = {
+  initialUser: User | null
+}
+
+export function Navbar({ initialUser }: Props) {
+  const [user, setUser] = useState<User | null>(initialUser)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const { user, avatarUrl } = useAuth()
+
+  useEffect(() => {
+    const supabase = createClient()
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+    return () => sub.subscription.unsubscribe()
+  }, [])
 
   return (
     <nav className="border-b border-cyan-500 sticky top-0 z-50 bg-slate-950/75 backdrop-blur-md shadow-2xl shadow-cyan-500/50 ">
@@ -28,7 +41,7 @@ export function Navbar() {
             {user ? (
               <Link href="/profile" className="relative h-10 w-10 overflow-hidden rounded-full ring-2 ring-cyan-500">
                 <Image
-                  src={avatarUrl || '/assets/default-avatar.png'}
+                  src={user.user_metadata?.avatar_url || '/assets/default-avatar.png'}
                   alt="Profile"
                   fill
                   sizes="40px"
@@ -73,7 +86,7 @@ export function Navbar() {
               {user ? (
                 <Link href="/profile" className="flex items-center gap-3 px-3 py-2 text-white hover:text-[#55c58d]" onClick={() => setIsMenuOpen(false)}>
                   <div className="h-8 w-8 overflow-hidden rounded-full ring-2 ring-cyan-500">
-                    <Image src={avatarUrl || '/assets/default-avatar.png'} alt="Profile" width={32} height={32} className="object-cover" />
+                    <Image src={user.user_metadata?.avatar_url || '/assets/default-avatar.png'} alt="Profile" width={32} height={32} className="object-cover" />
                   </div>
                   Profile
                 </Link>

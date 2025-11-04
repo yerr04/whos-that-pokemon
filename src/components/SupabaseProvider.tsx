@@ -1,26 +1,26 @@
 "use client"
 
 import { createContext, useContext, useMemo } from 'react'
-import type { Session } from '@supabase/supabase-js'
+import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/utils/supabase/client'
 
 type SupabaseContextValue = {
   supabase: ReturnType<typeof createClient>
-  session: Session | null
+  initialUser: User | null
 }
 
 const SupabaseContext = createContext<SupabaseContextValue | undefined>(undefined)
 
 export function SupabaseProvider({
   children,
-  initialSession = null,
+  initialUser = null,
 }: {
   children: React.ReactNode
-  initialSession?: Session | null
+  initialUser?: User | null
 }) {
   const supabase = useMemo(() => createClient(), [])
   return (
-    <SupabaseContext.Provider value={{ supabase, session: initialSession }}>
+    <SupabaseContext.Provider value={{ supabase, initialUser }}>
       {children}
     </SupabaseContext.Provider>
   )
