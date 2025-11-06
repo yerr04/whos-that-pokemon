@@ -5,9 +5,7 @@ import Image from 'next/image'
 import type { User } from '@supabase/supabase-js'
 import { createClient } from '@/utils/supabase/client'
 
-type Props = {
-  initialUser: User | null
-}
+type Props = { initialUser: User | null }
 
 export function Navbar({ initialUser }: Props) {
   const [user, setUser] = useState<User | null>(initialUser)
@@ -18,28 +16,46 @@ export function Navbar({ initialUser }: Props) {
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
     })
-    return () => sub.subscription.unsubscribe()
+    return () => sub?.subscription?.unsubscribe()
   }, [])
 
   return (
-    <nav className="border-b border-cyan-500 sticky top-0 z-50 bg-slate-950/75 backdrop-blur-md shadow-2xl shadow-cyan-500/50 ">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
-          <Link href="/" className="flex items-center space-x-2">
-            <img src="/assets/pokeball.svg" alt="Pokeball" className="w-8 h-8" />
-            <img src="/assets/pokenerdle.png" className="h-11 pb-1.25" alt="PokéNerdle Logo" />
+    <div className="fixed inset-x-0 top-4 z-50 pointer-events-none px-48">
+      <nav
+        className="
+          pointer-events-auto mx-auto max-w-6xl px-3
+          rounded-full border border-white/10
+          bg-white/10 backdrop-blur-sm supports-[backdrop-filter]:bg-white/10
+          shadow-lg shadow-black/20 p-2
+        "
+      >
+        <div className="flex h-16 items-center justify-between">
+          {/* Brand */}
+          <Link href="/" className="flex items-center gap-2 pl-2">
+            <Image
+              src="/assets/pokenerdle.png"
+              alt="PokéNerdle Logo"
+              width={140}
+              height={44}
+              className="h-11 w-auto"
+              priority
+            />
           </Link>
 
-          <div className="hidden md:flex items-center space-x-6">
-            <Link href="/daily" className="text-white hover:text-[#55c58d] transition-colors">
+          {/* Desktop links */}
+          <div className="hidden items-center gap-6 md:flex pr-2">
+            <Link href="/daily" className="text-white/90 hover:text-cyan-500 transition-colors">
               Daily Challenge
             </Link>
-            <Link href="/unlimited" className="text-white hover:text-[#55c58d] transition-colors">
+            <Link href="/unlimited" className="text-white/90 hover:text-cyan-500 transition-colors">
               Unlimited Mode
             </Link>
 
             {user ? (
-              <Link href="/profile" className="relative h-10 w-10 overflow-hidden rounded-full ring-2 ring-cyan-500">
+              <Link
+                href="/profile"
+                className="relative h-10 w-10 overflow-hidden rounded-full ring-2 ring-cyan-500/60 hover:ring-cyan-400/80 transition"
+              >
                 <Image
                   src={user.user_metadata?.avatar_url || '/assets/default-avatar.png'}
                   alt="Profile"
@@ -51,54 +67,86 @@ export function Navbar({ initialUser }: Props) {
             ) : (
               <Link
                 href="/auth/sign-in"
-                className="px-4 py-2 rounded-full bg-cyan-500 text-[#0d1a26] text-center font-semibold hover:bg-cyan-400 transition-colors w-24"
+                className="w-24 rounded-full bg-cyan-500 px-4 py-2 text-center font-semibold text-[#0d1a26] hover:bg-cyan-400 transition-colors"
               >
                 Log In
               </Link>
             )}
           </div>
 
-          <button onClick={() => setIsMenuOpen(!isMenuOpen)} className="md:hidden text-white">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
-                d={isMenuOpen ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
+          {/* Mobile toggle */}
+          <button
+            onClick={() => setIsMenuOpen((v) => !v)}
+            className="md:hidden rounded-full p-2 text-white/90 hover:text-white"
+            aria-label="Toggle menu"
+          >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d={isMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}
+              />
             </svg>
           </button>
         </div>
+      </nav>
 
-        {isMenuOpen && (
-          <div className="md:hidden border-t border-[#55c58d]">
-            <div className="px-2 pt-2 pb-3 space-y-1">
-              <Link 
-                href="/daily" 
-                className="block px-3 py-2 text-white hover:text-[#55c58d] transition-colors"
+      {/* Mobile sheet */}
+      {isMenuOpen && (
+        <div
+          className="
+            md:hidden mx-auto mt-3 w-[92%] max-w-sm
+            rounded-2xl border border-white/10
+            bg-white/10 backdrop-blur-md supports-[backdrop-filter]:bg-white/10
+            shadow-lg shadow-black/20
+          "
+        >
+          <div className="px-2 py-2">
+            <Link
+              href="/daily"
+              className="block rounded-md px-3 py-2 text-white/90 hover:bg-white/10 hover:text-white transition"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Daily Challenge
+            </Link>
+            <Link
+              href="/unlimited"
+              className="block rounded-md px-3 py-2 text-white/90 hover:bg-white/10 hover:text-white transition"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Unlimited Mode
+            </Link>
+
+            {user ? (
+              <Link
+                href="/profile"
+                className="mt-1 flex items-center gap-3 rounded-md px-3 py-2 text-white/90 hover:bg-white/10 hover:text-white transition"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Daily Challenge
+                <span className="h-8 w-8 overflow-hidden rounded-full ring-2 ring-cyan-500/60">
+                  <Image
+                    src={user.user_metadata?.avatar_url || '/assets/default-avatar.png'}
+                    alt="Profile"
+                    width={32}
+                    height={32}
+                    className="h-8 w-8 object-cover"
+                  />
+                </span>
+                Profile
               </Link>
-              <Link 
-                href="/unlimited" 
-                className="block px-3 py-2 text-white hover:text-[#55c58d] transition-colors"
+            ) : (
+              <Link
+                href="/auth/sign-in"
+                className="mt-2 block rounded-full bg-cyan-500 px-4 py-2 text-center font-semibold text-[#0d1a26] hover:bg-cyan-400 transition-colors"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Unlimited Mode
+                Log In
               </Link>
-              {user ? (
-                <Link href="/profile" className="flex items-center gap-3 px-3 py-2 text-white hover:text-[#55c58d]" onClick={() => setIsMenuOpen(false)}>
-                  <div className="h-8 w-8 overflow-hidden rounded-full ring-2 ring-cyan-500">
-                    <Image src={user.user_metadata?.avatar_url || '/assets/default-avatar.png'} alt="Profile" width={32} height={32} className="object-cover" />
-                  </div>
-                  Profile
-                </Link>
-              ) : (
-                <Link href="/auth/sign-in" className="block px-3 py-2 text-white hover:text-[#55c58d]" onClick={() => setIsMenuOpen(false)}>
-                  Log In
-                </Link>
-              )}
-            </div>
+            )}
           </div>
-        )}
-      </div>
-    </nav>
+        </div>
+      )}
+    </div>
   )
 }

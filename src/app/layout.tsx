@@ -25,7 +25,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <SupabaseProvider initialUser={data.user}>
           {/* Pass the user to Navbar so SSR and client match */}
-          <Navbar initialUser={data.user} />
+          {<Navbar initialUser={data.user} />}
+          {/*<Nav />*/}
           {children}
           <Analytics />
         </SupabaseProvider>
