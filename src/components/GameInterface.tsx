@@ -96,7 +96,7 @@ export function GameInterface({
         {(title || subtitle) && (
           <div className="text-center mb-6">
             {title && (
-              <h1 className="text-3xl font-bold text-[#55c58d] mb-2">
+              <h1 className="text-3xl font-bold text-cyan-500 mb-2">
                 {title}
               </h1>
             )}
@@ -228,11 +228,11 @@ export function GameInterface({
                   value={currentGuess}
                   onChange={(e) => setCurrentGuess(e.target.value)}
                   placeholder="Who's that Pokémon?"
-                  className="bg-white rounded-full px-3 py-2 flex-grow text-black border-6 border-[#55c58d] focus:outline-none focus:ring-2 focus:ring-[#206d46] transition-colors"
+                  className="bg-white rounded-full px-3 py-2 flex-grow text-black border-6 border-cyan-500 focus:outline-none focus:ring-2 focus:ring-[#206d46] transition-colors"
                 />
                 <button
                   type="submit"
-                  className="px-8 py-2 bg-cyan-500 text-white rounded-full hover:bg-cyan-400 transition-colors"
+                  className="px-8 py-2 bg-cyan-500 text-black rounded-full hover:bg-cyan-400 transition-colors"
                 >
                   Enter
                 </button>

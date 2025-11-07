@@ -1,7 +1,6 @@
 "use client"
 
 import { createClient } from "@/utils/supabase/client"
-import GlareBackgroundContainer from "@/components/GlareBackgroundContainer"
 
 export default function SignInClient() {
   const supabase = createClient()
@@ -23,7 +22,6 @@ export default function SignInClient() {
   }
 
   return (
-    <GlareBackgroundContainer>
       <main className="min-h-screen flex items-center justify-center">
         <button
           onClick={signInWithGoogle}
@@ -32,6 +30,5 @@ export default function SignInClient() {
           Continue with Google
         </button>
       </main>
-    </GlareBackgroundContainer>
   )
 }

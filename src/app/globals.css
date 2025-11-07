@@ -24,7 +24,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #05132b;
+    --background: #060010;
     --foreground: #ededed;
   }
 }
@@ -40,12 +40,6 @@ body {
 @tailwind components;
 @tailwind utilities;
 
-/* optional: smooth gradient animation */
-html, body {
-  height: 100%;
-  background-color: #020617;
-}
-
 @keyframes fly-in {
   from {
     opacity: 0;
@@ -59,49 +53,4 @@ html, body {
 
 .animate-fly-in {
   animation: fly-in 0.8s ease-out both;
-}
-
-@keyframes pulse-glow {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50% { opacity: 0.7; transform: scale(1.05); }
-}
-.animate-pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
-}
-
-/* app/globals.css */
-@layer base {
-  @property --angle {
-    syntax: "<angle>";
-    initial-value: 0deg;
-    inherits: true;
-  }
-}
-
-/* app/globals.css */
-@layer components {
-  .fancy-border {
-    position: relative;
-  }
-  .fancy-border::before,
-  .fancy-border::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: 9999px; /* full */
-    padding: 2px;          /* border thickness */
-    background: conic-gradient(
-      from var(--angle),
-      #ff4545, #00ff99, #006aff, #ff0095, #ff4545
-    );
-    -webkit-mask:
-      linear-gradient(#000 0 0) content-box,
-      linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-            mask-composite: exclude;
-  }
-  .fancy-border::before {
-    filter: blur(24px);
-    opacity: 0.5;
-  }
 }
