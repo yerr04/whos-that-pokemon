@@ -11,7 +11,7 @@ export default async function SignInPage() {
   } = await supabase.auth.getUser()
 
   if (user) {
-    redirect("/")
+    redirect("/profile")
   }
 
   return <SignInClient />
