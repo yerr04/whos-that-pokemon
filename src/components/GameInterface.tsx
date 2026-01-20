@@ -79,7 +79,7 @@ export function GameInterface({
 
   return (
     <>
-      <div className="max-w-3xl mx-auto mt-12 p-4 rounded-lg shadow-lg animate-fly-in">
+      <div className="max-w-3xl mx-auto mt-24 md:mt-28 p-4 rounded-lg shadow-lg animate-fly-in">
         {/* Debug toggle button */}
         {process.env.NODE_ENV === 'development' && setDebugMode !== undefined && (
           <div className="flex gap-2 mb-4">

@@ -20,7 +20,7 @@ export function Navbar({ initialUser }: Props) {
   }, [])
 
   return (
-    <div className="fixed inset-x-0 top-4 z-50 pointer-events-none px-48">
+    <div className="fixed inset-x-0 top-4 z-50 pointer-events-none px-4 md:px-48">
       <nav
         className="
           pointer-events-auto mx-auto max-w-6xl px-3
@@ -31,13 +31,13 @@ export function Navbar({ initialUser }: Props) {
       >
         <div className="flex h-16 items-center justify-between">
           {/* Brand */}
-          <Link href="/" className="flex items-center gap-2 pl-2">
+          <Link href="/" className="flex items-center gap-2 pl-2 flex-shrink-0">
             <Image
               src="/assets/pokenerdle.png"
               alt="PokéNerdle Logo"
               width={140}
               height={44}
-              className="h-11 w-auto"
+              className="h-8 md:h-11 w-auto"
               priority
             />
           </Link>
@@ -96,23 +96,23 @@ export function Navbar({ initialUser }: Props) {
       {isMenuOpen && (
         <div
           className="
-            md:hidden mx-auto mt-3 w-[92%] max-w-sm
+            md:hidden mx-auto mt-3 w-[calc(100%-2rem)] max-w-sm
             rounded-2xl border border-white/10
             bg-white/10 backdrop-blur-md supports-[backdrop-filter]:bg-white/10
             shadow-lg shadow-black/20
           "
         >
-          <div className="px-2 py-2">
+          <div className="px-4 py-3 space-y-1">
             <Link
               href="/daily"
-              className="block rounded-md px-3 py-2 text-white/90 hover:bg-white/10 hover:text-white transition"
+              className="block rounded-md px-4 py-3 text-white/90 hover:bg-white/10 hover:text-white transition text-base"
               onClick={() => setIsMenuOpen(false)}
             >
               Daily Challenge
             </Link>
             <Link
               href="/unlimited"
-              className="block rounded-md px-3 py-2 text-white/90 hover:bg-white/10 hover:text-white transition"
+              className="block rounded-md px-4 py-3 text-white/90 hover:bg-white/10 hover:text-white transition text-base"
               onClick={() => setIsMenuOpen(false)}
             >
               Unlimited Mode
@@ -121,10 +121,10 @@ export function Navbar({ initialUser }: Props) {
             {user ? (
               <Link
                 href="/profile"
-                className="mt-1 flex items-center gap-3 rounded-md px-3 py-2 text-white/90 hover:bg-white/10 hover:text-white transition"
+                className="flex items-center gap-3 rounded-md px-4 py-3 text-white/90 hover:bg-white/10 hover:text-white transition text-base border-t border-white/10 mt-2 pt-3"
                 onClick={() => setIsMenuOpen(false)}
               >
-                <span className="h-8 w-8 overflow-hidden rounded-full ring-2 ring-cyan-500/60">
+                <span className="h-8 w-8 overflow-hidden rounded-full ring-2 ring-cyan-500/60 flex-shrink-0">
                   <Image
                     src={user.user_metadata?.avatar_url || '/assets/default-avatar.png'}
                     alt="Profile"
@@ -133,12 +133,12 @@ export function Navbar({ initialUser }: Props) {
                     className="h-8 w-8 object-cover"
                   />
                 </span>
-                Profile
+                <span>Profile</span>
               </Link>
             ) : (
               <Link
                 href="/auth/sign-in"
-                className="mt-2 block rounded-full bg-cyan-500 px-4 py-2 text-center font-semibold text-[#0d1a26] hover:bg-cyan-400 transition-colors"
+                className="block rounded-full bg-cyan-500 px-4 py-3 text-center font-semibold text-[#0d1a26] hover:bg-cyan-400 transition-colors mt-3"
                 onClick={() => setIsMenuOpen(false)}
               >
                 Log In
