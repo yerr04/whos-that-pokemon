@@ -29,6 +29,12 @@ function isProtectedPath(pathname: string) {
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl
+  
+  // Skip middleware for auth callback - it handles its own redirects
+  if (pathname.startsWith("/auth/callback")) {
+    return NextResponse.next()
+  }
+
   const authenticated = hasSupabaseSession(request)
 
   if (!authenticated && isProtectedPath(pathname)) {
@@ -42,10 +48,18 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // If authenticated and on sign-in page, respect the redirectTo parameter
+  // instead of always redirecting to home
   if (authenticated && pathname.startsWith("/auth/sign-in")) {
+    const redirectTo = new URLSearchParams(search).get("redirectTo")
     const url = request.nextUrl.clone()
-    url.pathname = "/"
-    url.search = ""
+    if (redirectTo && redirectTo.startsWith("/")) {
+      url.pathname = redirectTo
+      url.search = ""
+    } else {
+      url.pathname = "/"
+      url.search = ""
+    }
     return NextResponse.redirect(url)
   }
 

@@ -11,9 +11,23 @@ export function Navbar({ initialUser }: Props) {
   const [user, setUser] = useState<User | null>(initialUser)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
+  // Update user when initialUser prop changes (e.g., after OAuth redirect)
+  useEffect(() => {
+    setUser(initialUser)
+  }, [initialUser])
+
   useEffect(() => {
     const supabase = createClient()
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+    
+    // Fetch the current session on mount to ensure we have the latest user state
+    // This is important after OAuth redirects when the session might be available
+    // but the component hasn't been notified yet
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null)
+    })
+
+    // Listen for auth state changes (including OAuth sign-in)
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null)
     })
     return () => sub?.subscription?.unsubscribe()
