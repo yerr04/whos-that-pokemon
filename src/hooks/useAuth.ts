@@ -6,7 +6,7 @@ import { useSupabase } from '@/components/SupabaseProvider';
 export function useAuth() {
   const { supabase, initialUser } = useSupabase();
   const [user, setUser] = useState<User | null>(initialUser);
-  const [loading, setLoading] = useState(initialUser == null);
+  const [loading, setLoading] = useState(false); // Start with false since we have initialUser
 
   const refreshUser = useCallback(async () => {
     setLoading(true);
@@ -26,18 +26,22 @@ export function useAuth() {
     setLoading(false);
   }, [supabase]);
 
+  // Update user when initialUser prop changes (e.g., after OAuth redirect)
   useEffect(() => {
     setUser(initialUser ?? null);
-    setLoading(initialUser == null);
   }, [initialUser]);
 
+  // Only listen for auth state changes - don't call getUser on mount
+  // since middleware and layout already handle initial user state
   useEffect(() => {
-    refreshUser();
-  }, [refreshUser]);
-
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(() => {
-      refreshUser();
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      // Update user immediately from session to avoid extra getUser call
+      setUser(session?.user ?? null);
+      
+      // Only refresh if we need to (e.g., token refresh events)
+      if (event === 'TOKEN_REFRESHED' || event === 'SIGNED_OUT') {
+        refreshUser();
+      }
     });
 
     return () => authListener.subscription.unsubscribe();

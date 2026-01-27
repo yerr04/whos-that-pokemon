@@ -5,6 +5,8 @@ import { getTodaysDateKey, getDailyPokemonId, getTimeUntilNextChallenge } from '
 import { HintType, MAX_GUESSES } from '@/types/game'
 import { createSeededRandom, generateHintSequence, isCloseMatch } from '@/utils/pokemon'
 import { recordGameResult } from '@/utils/stats'
+import { useAuth } from './useAuth'
+import { useSupabase } from '@/components/SupabaseProvider'
 
 interface DailyGameState {
   dateKey: string
@@ -21,6 +23,8 @@ const STORAGE_KEY = 'daily-pokemon-game'
 
 export function useDailyChallenge() {
   const gameLogic = useGameLogic()
+  const { user } = useAuth()
+  const { supabase } = useSupabase()
   const [gameState, setGameState] = useState<DailyGameState | null>(null)
   const [timeUntilNext, setTimeUntilNext] = useState(getTimeUntilNextChallenge())
   const [currentDateKey, setCurrentDateKey] = useState(getTodaysDateKey())
@@ -123,7 +127,7 @@ export function useDailyChallenge() {
     gameLogic.setCurrentGuess('')
     
     // Record game result when completed
-    if (isCorrect || newGuessesMade >= MAX_GUESSES) {
+    if ((isCorrect || newGuessesMade >= MAX_GUESSES) && user) {
       await recordGameResult({
         mode: 'daily',
         pokemonId: gameState.pokemonId,
@@ -135,6 +139,8 @@ export function useDailyChallenge() {
           ? gameState.hintSequence[Math.max(newGuessesMade - 1, 0)]
           : null,
         dailyDateKey: currentDateKey,
+        userId: user.id,
+        supabase,
       }).catch(err => {
         console.error('Failed to record daily game result:', err)
       })

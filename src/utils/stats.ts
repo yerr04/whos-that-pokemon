@@ -1,5 +1,5 @@
 // src/utils/stats.ts
-import { createClient } from '@/utils/supabase/client';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { HintType } from '@/types/game';
 
 type RecordGameInput = {
@@ -11,6 +11,8 @@ type RecordGameInput = {
   won: boolean;
   hintTypeOnWin: HintType | null;
   dailyDateKey?: string;
+  userId: string; // Accept userId as parameter to avoid redundant getUser() call
+  supabase: SupabaseClient; // Accept supabase client to reuse context instance
 };
 
 export async function recordGameResult({
@@ -22,16 +24,9 @@ export async function recordGameResult({
   won,
   hintTypeOnWin,
   dailyDateKey,
+  userId,
+  supabase,
 }: RecordGameInput) {
-  const supabase = createClient(); // Move inside the function
-  
-  const { data: { user }, error: userError } = await supabase.auth.getUser();
-  
-  if (userError || !user) {
-    console.warn('No authenticated user, skipping game result recording');
-    return;
-  }
-
   console.log('Recording game result:', {
     mode,
     pokemonId,
@@ -41,23 +36,24 @@ export async function recordGameResult({
     won,
     hintTypeOnWin,
     dailyDateKey,
-    userId: user.id
+    userId
   });
 
   const { data, error } = await supabase.rpc('apply_game_result', {
     p_mode: mode,
-    p_user_id: user.id,
+    p_user_id: userId,
     p_win: won,
     p_guesses_made: guessesMade,
     p_hints_revealed: hintsRevealed,
     p_hint_type_on_win: hintTypeOnWin,
     p_daily_date: dailyDateKey || null,
-    p_hint_sequence: hintSequence, // Make sure this is a string array, not a JSON object
+    p_hint_sequence: hintSequence,
     p_pokemon_id: pokemonId,
   });
 
   if (error) {
     console.error('Failed to record game result:', error);
+    throw error;
   } else {
     console.log('Successfully recorded game result');
   }

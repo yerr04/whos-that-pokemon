@@ -13,9 +13,8 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
-  // Refresh the session to ensure access tokens are up to date before asking for the user.
-  await supabase.auth.getSession();
-  const { data } = await supabase.auth.getUser();
+  // Middleware handles session refresh, so we only need to get the user once
+  const { data: { user } } = await supabase.auth.getUser();
 
   return (
     <html lang="en" className="scroll-smooth">
@@ -23,9 +22,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="icon" href="/assets/pokeball.svg" type="image/svg+xml" />
       </head>
       <body>
-        <SupabaseProvider initialUser={data.user}>
+        <SupabaseProvider initialUser={user ?? null}>
           {/* Pass the user to Navbar so SSR and client match */}
-          {<Navbar initialUser={data.user} />}
+          {<Navbar initialUser={user ?? null} />}
           {/*<Nav />*/}
           {children}
           <Analytics />

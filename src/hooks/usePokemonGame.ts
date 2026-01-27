@@ -4,9 +4,13 @@ import { useGameLogic } from './useGameLogic'
 import { HintType, generateHintSequence } from '@/utils/pokemon'
 import { recordGameResult } from '@/utils/stats'
 import { MAX_GUESSES } from '@/types/game'
+import { useAuth } from './useAuth'
+import { useSupabase } from '@/components/SupabaseProvider'
 
 export function usePokemonGame() {
   const gameLogic = useGameLogic()
+  const { user } = useAuth()
+  const { supabase } = useSupabase()
   const [hintSequence, setHintSequence] = useState<HintType[]>([])
   const [currentPokemonId, setCurrentPokemonId] = useState<number | null>(null)
   const hasRecordedRef = useRef(false)
@@ -40,7 +44,7 @@ export function usePokemonGame() {
   useEffect(() => {
     const isCompleted = gameLogic.win || (gameLogic.guessesMade >= MAX_GUESSES)
     
-    if (isCompleted && !hasRecordedRef.current && currentPokemonId) {
+    if (isCompleted && !hasRecordedRef.current && currentPokemonId && user) {
       hasRecordedRef.current = true
       
       recordGameResult({
@@ -51,11 +55,13 @@ export function usePokemonGame() {
         hintSequence,
         won: gameLogic.win,
         hintTypeOnWin: gameLogic.win ? hintSequence[Math.max(gameLogic.guessesMade - 1, 0)] : null,
+        userId: user.id,
+        supabase,
       }).catch(err => {
         console.error('Failed to record game result:', err)
       })
     }
-  }, [gameLogic.win, gameLogic.guessesMade, currentPokemonId, hintSequence])
+  }, [gameLogic.win, gameLogic.guessesMade, currentPokemonId, hintSequence, user, supabase])
 
   return {
     ...gameLogic,

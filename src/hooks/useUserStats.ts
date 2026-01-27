@@ -1,6 +1,6 @@
 // src/hooks/useUserStats.ts
 import { useEffect, useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { useSupabase } from '@/components/SupabaseProvider';
 import { useAuth } from './useAuth';
 
 interface ModeTotal {
@@ -19,6 +19,7 @@ interface HintTotal {
 
 export function useUserStats() {
   const { user } = useAuth();
+  const { supabase } = useSupabase();
   const [loading, setLoading] = useState(true);
   const [modeTotals, setModeTotals] = useState<ModeTotal[]>([]);
   const [hintTotals, setHintTotals] = useState<HintTotal[]>([]);
@@ -32,23 +33,30 @@ export function useUserStats() {
     }
 
     const fetchUserStats = async () => {
-      const supabase = await createClient();
+      try {
+        const [modeRes, hintRes] = await Promise.all([
+          supabase.from('user_mode_totals').select('*'),
+          supabase.from('user_hint_totals').select('*').order('wins_with_hint', { ascending: false }),
+        ]);
 
-      Promise.all([
-        supabase.from('user_mode_totals').select('*'),
-        supabase.from('user_hint_totals').select('*').order('wins_with_hint', { ascending: false }),
-      ]).then(([modeRes, hintRes]) => {
+        if (modeRes.error) {
+          console.error('Error fetching mode totals:', modeRes.error);
+        }
+        if (hintRes.error) {
+          console.error('Error fetching hint totals:', hintRes.error);
+        }
+
         setModeTotals(modeRes.data ?? []);
         setHintTotals(hintRes.data ?? []);
-        setLoading(false);
-      }).catch((err) => {
+      } catch (err) {
         console.error('Error fetching user stats:', err);
+      } finally {
         setLoading(false);
-      });
+      }
     };
 
     fetchUserStats();
-  }, [user]);
+  }, [user, supabase]);
 
   return { loading, modeTotals, hintTotals };
 }

@@ -5,8 +5,7 @@ import { createClient } from "@/utils/supabase/server"
 
 export default async function ProfilePage() {
   const supabase = await createClient()
-  // Ensure any stale access token is refreshed before verifying the user.
-  await supabase.auth.getSession()
+  // Middleware handles session refresh, so we only need to get the user
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {

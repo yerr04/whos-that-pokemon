@@ -3,11 +3,12 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { User } from '@supabase/supabase-js'
-import { createClient } from '@/utils/supabase/client'
+import { useSupabase } from './SupabaseProvider'
 
 type Props = { initialUser: User | null }
 
 export function Navbar({ initialUser }: Props) {
+  const { supabase } = useSupabase()
   const [user, setUser] = useState<User | null>(initialUser)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
@@ -16,22 +17,14 @@ export function Navbar({ initialUser }: Props) {
     setUser(initialUser)
   }, [initialUser])
 
+  // Listen for auth state changes (including OAuth sign-in)
+  // Don't call getSession/getUser here - middleware and layout handle that
   useEffect(() => {
-    const supabase = createClient()
-    
-    // Fetch the current session on mount to ensure we have the latest user state
-    // This is important after OAuth redirects when the session might be available
-    // but the component hasn't been notified yet
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-    })
-
-    // Listen for auth state changes (including OAuth sign-in)
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null)
     })
     return () => sub?.subscription?.unsubscribe()
-  }, [])
+  }, [supabase])
 
   return (
     <div className="fixed inset-x-0 top-4 z-50 pointer-events-none px-4 md:px-48">
