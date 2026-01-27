@@ -12,15 +12,34 @@ const derivedSupabaseCookie = projectRefMatch
 const FALLBACK_COOKIES = ["sb-access-token", "sb-refresh-token"]
 
 function hasSupabaseSession(request: NextRequest) {
-  if (
-    derivedSupabaseCookie &&
-    request.cookies.get(derivedSupabaseCookie) !== undefined
-  ) {
+  // Check for Supabase SSR cookies - they use a pattern like sb-<project-ref>-auth-token
+  // But also check for any cookie that starts with sb- and contains auth
+  const allCookies = request.cookies.getAll()
+  
+  // Check for derived cookie name
+  if (derivedSupabaseCookie) {
+    const cookie = request.cookies.get(derivedSupabaseCookie)
+    if (cookie && cookie.value) {
+      return true
+    }
+  }
+
+  // Check for any Supabase auth-related cookies
+  const hasSupabaseAuthCookie = allCookies.some(
+    cookie => cookie.name.startsWith('sb-') && 
+              (cookie.name.includes('auth') || cookie.name.includes('token'))
+  )
+  
+  if (hasSupabaseAuthCookie) {
     return true
   }
 
+  // Fallback to old cookie names
   return FALLBACK_COOKIES.some(
-    cookieName => request.cookies.get(cookieName) !== undefined
+    cookieName => {
+      const cookie = request.cookies.get(cookieName)
+      return cookie !== undefined && cookie.value !== undefined
+    }
   )
 }
 
@@ -37,7 +56,9 @@ export function handleRouteProtection(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Handle route protection
+  // Handle route protection - check for session cookies
+  // Note: This is a lightweight check. The actual user verification happens
+  // in the page components after middleware refreshes the session
   const authenticated = hasSupabaseSession(request)
 
   if (!authenticated && isProtectedPath(pathname)) {
@@ -68,15 +89,14 @@ export function handleRouteProtection(request: NextRequest) {
 }
 
 export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl
+  const { pathname, search } = request.nextUrl
   
-  // Handle route protection first
-  const protectionResponse = handleRouteProtection(request)
-  if (protectionResponse) {
-    return protectionResponse
+  // Skip auth callback - it handles its own session
+  if (pathname.startsWith("/auth/callback")) {
+    return NextResponse.next()
   }
 
-  // Then, refresh the session if there's a Supabase session cookie
+  // Create response first
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -106,10 +126,34 @@ export async function middleware(request: NextRequest) {
     },
   })
 
-  // Refresh session if it exists - this prevents token expiration issues
-  // Only refresh if we're not on the auth callback route (it handles its own session)
-  if (!pathname.startsWith('/auth/callback')) {
-    await supabase.auth.getUser()
+  // Refresh session - this also validates the session and refreshes tokens if needed
+  // Use getSession() instead of getUser() to avoid extra API calls
+  const { data: { session } } = await supabase.auth.getSession()
+  const isAuthenticated = !!session?.user
+
+  // Handle route protection based on actual session, not just cookies
+  if (!isAuthenticated && isProtectedPath(pathname)) {
+    const url = request.nextUrl.clone()
+    url.pathname = "/auth/sign-in"
+    const redirectTo = `${pathname}${search}`
+    if (redirectTo !== "/" && redirectTo !== "/auth/sign-in") {
+      url.searchParams.set("redirectTo", redirectTo)
+    }
+    return NextResponse.redirect(url)
+  }
+
+  // If authenticated and on sign-in page, redirect to intended destination
+  if (isAuthenticated && pathname.startsWith("/auth/sign-in")) {
+    const redirectTo = new URLSearchParams(search).get("redirectTo")
+    const url = request.nextUrl.clone()
+    if (redirectTo && redirectTo.startsWith("/")) {
+      url.pathname = redirectTo
+      url.search = ""
+    } else {
+      url.pathname = "/"
+      url.search = ""
+    }
+    return NextResponse.redirect(url)
   }
 
   return response

@@ -5,8 +5,10 @@ import { createClient } from "@/utils/supabase/server"
 
 export default async function ProfilePage() {
   const supabase = await createClient()
-  // Middleware handles session refresh, so we only need to get the user
-  const { data: { user } } = await supabase.auth.getUser()
+  // Middleware already refreshed the session, so getSession() is sufficient
+  // This avoids an extra getUser() call that could cause rate limiting
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
 
   if (!user) {
     redirect("/auth/sign-in?redirectTo=/profile")

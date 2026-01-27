@@ -8,11 +8,9 @@ export default async function SignInPage({
   searchParams: Promise<{ redirectTo?: string }> | { redirectTo?: string }
 }) {
   const supabase = await createClient()
-  // Refresh the session so we can reliably determine if the user is still signed in.
-  await supabase.auth.getSession()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Middleware already refreshed the session, so getSession() is sufficient
+  const { data: { session } } = await supabase.auth.getSession()
+  const user = session?.user
 
   // If user is authenticated, redirect to their intended destination or profile
   if (user) {
