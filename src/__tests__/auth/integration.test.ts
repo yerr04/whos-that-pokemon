@@ -4,7 +4,7 @@
  */
 
 import { NextRequest } from 'next/server'
-import { proxy } from '../../proxy'
+import { handleRouteProtection as proxy } from '../../middleware'
 
 // This is a conceptual integration test file
 // In a real scenario, you'd use a testing library that can simulate

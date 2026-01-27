@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server'
-import { proxy } from '../proxy'
+import { handleRouteProtection as proxy } from '../middleware'
 
 // Mock NextResponse
 jest.mock('next/server', () => {
