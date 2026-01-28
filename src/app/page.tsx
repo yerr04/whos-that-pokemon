@@ -17,20 +17,20 @@ export default function HomePage() {
       </div>
 
       {/* Foreground content */}
-      <main className="relative z-10 flex min-h-screen items-center justify-center p-8">
-        <div className="animate-fly-in text-center text-white p-8 rounded-lg">
-          <h1 className="text-6xl font-bold">Welcome to PokeNerdle!</h1>
+      <main className="relative z-10 flex min-h-screen items-center justify-center p-4 md:p-8">
+        <div className="animate-fly-in text-center text-white p-4 md:p-8 rounded-lg max-w-2xl">
+          <h1 className="text-4xl md:text-6xl font-bold">Welcome to PokeNerdle!</h1>
           <p className="mt-3 opacity-80">Guess the Pokémon!</p>
-          <div className="p-4 space-x-4">
+          <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
                 href="/daily"
-                className="w-24 rounded-full bg-cyan-500 px-4 py-2 text-center font-semibold text-[#0d1a26] hover:bg-cyan-400 transition-colors"
+                className="w-full sm:w-auto min-w-[200px] rounded-full bg-cyan-500 px-6 py-3 text-center font-semibold text-[#0d1a26] hover:bg-cyan-400 transition-colors"
               >
                 Play Daily Challenge
               </Link>
               <Link
                 href="/unlimited"
-                className="w-24 rounded-full bg-cyan-500 px-4 py-2 text-center font-semibold text-[#0d1a26] hover:bg-cyan-400 transition-colors"
+                className="w-full sm:w-auto min-w-[200px] rounded-full bg-cyan-500 px-6 py-3 text-center font-semibold text-[#0d1a26] hover:bg-cyan-400 transition-colors"
               >
                 Play Unlimited Mode
               </Link>

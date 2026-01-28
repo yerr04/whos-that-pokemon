@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import type { User } from '@supabase/supabase-js'
@@ -11,6 +11,7 @@ export function Navbar({ initialUser }: Props) {
   const { supabase } = useSupabase()
   const [user, setUser] = useState<User | null>(initialUser)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   // Update user when initialUser prop changes (e.g., after OAuth redirect)
   useEffect(() => {
@@ -25,6 +26,28 @@ export function Navbar({ initialUser }: Props) {
     })
     return () => sub?.subscription?.unsubscribe()
   }, [supabase])
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false)
+      }
+    }
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+      // Prevent body scroll when menu is open
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.body.style.overflow = ''
+    }
+  }, [isMenuOpen])
 
   return (
     <div className="fixed inset-x-0 top-4 z-50 pointer-events-none px-4 md:px-48">
@@ -101,14 +124,23 @@ export function Navbar({ initialUser }: Props) {
 
       {/* Mobile sheet */}
       {isMenuOpen && (
-        <div
-          className="
-            md:hidden mx-auto mt-3 w-[calc(100%-2rem)] max-w-sm
-            rounded-2xl border border-white/10
-            bg-white/10 backdrop-blur-md supports-[backdrop-filter]:bg-white/10
-            shadow-lg shadow-black/20
-          "
-        >
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
+            onClick={() => setIsMenuOpen(false)}
+          />
+          {/* Menu */}
+          <div
+            ref={menuRef}
+            className="
+              pointer-events-auto relative z-50
+              md:hidden mx-auto mt-3 w-[calc(100%-2rem)] max-w-sm
+              rounded-2xl border border-white/10
+              bg-white/10 backdrop-blur-md supports-[backdrop-filter]:bg-white/10
+              shadow-lg shadow-black/20
+            "
+          >
           <div className="px-4 py-3 space-y-1">
             <Link
               href="/daily"
@@ -153,6 +185,7 @@ export function Navbar({ initialUser }: Props) {
             )}
           </div>
         </div>
+        </>
       )}
     </div>
   )
