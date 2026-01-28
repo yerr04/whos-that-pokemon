@@ -15,7 +15,7 @@ export default async function ProfilePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto mt-24 md:mt-28 p-6">
       <h1 className="text-2xl font-bold mb-4">Your Profile</h1>
       <div className="space-y-2">
         <div>User ID: {user.id}</div>
