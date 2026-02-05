@@ -18,7 +18,6 @@ export default async function ProfilePage() {
     <div className="max-w-4xl mx-auto mt-24 md:mt-28 p-6">
       <h1 className="text-2xl font-bold mb-4">Your Profile</h1>
       <div className="space-y-2">
-        <div>User ID: {user.id}</div>
         <div>Email: {user.email}</div>
       </div>
     </div>
