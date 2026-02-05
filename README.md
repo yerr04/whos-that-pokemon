@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PokéNerdle (Who's That Pokémon?)
 
-## Getting Started
+A Pokémon guessing game: reveal hints with each wrong guess and try to name the Pokémon before you run out of tries. Play a shared daily challenge or unlimited random rounds.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Daily Challenge** (`/daily`) — One Pokémon per day (resets 10 AM ET). Same Pokémon and hint order for everyone; progress saved in the browser.
+- **Unlimited Mode** (`/unlimited`) — Random Pokémon (IDs 1–1025); play as many rounds as you like.
+- **Progressive hints** — Up to 6 hints (BST, region, ability, types, flavor text, move, evolution, height/weight, then cry and silhouette). Wrong guesses reveal the next hint; 7 guesses max.
+- **Auth & stats** — Sign in with Supabase; track games, wins, streaks, and hint usage on your profile.
+
+## Tech Stack
+
+| Layer        | Tech |
+|-------------|------|
+| Framework   | Next.js 16 (App Router), React 19 |
+| Language    | TypeScript 5 |
+| Styling     | Tailwind CSS 4 |
+| Backend     | Supabase (PostgreSQL + Auth) |
+| External API| [PokeAPI](https://pokeapi.co/) (REST) |
+| Fuzzy match | Fuse.js |
+
+## Project Structure
+
+```
+src/
+├── app/              # Pages: daily, unlimited, profile, auth
+├── components/       # GameInterface, HintBlock, Navbar, Footer, etc.
+├── hooks/            # useGameLogic, usePokemonGame, useDailyChallenge, useAuth, useUserStats
+├── lib/              # PokeAPI client (pokeapi.ts)
+├── types/            # TypeScript types (game.ts)
+├── utils/            # pokemon, stats, dailyChallenge, supabase
+└── middleware.ts     # Auth & routing
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Game logic lives in custom hooks; `GameInterface` is a shared UI that receives game state as props.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Documentation
 
-## Learn More
+- **[PROJECT_WALKTHROUGH.md](./PROJECT_WALKTHROUGH.md)** — Architecture, hint system design, TypeScript usage, PokeAPI & Supabase integration, game and auth flows, and improvement ideas.
 
-To learn more about Next.js, take a look at the following resources:
+---
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Inspired by Wordle. Pokémon data from [PokeAPI](https://pokeapi.co/); type icons and cries from [Pokémon Showdown](https://play.pokemonshowdown.com/).
