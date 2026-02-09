@@ -1,5 +1,6 @@
 "use client"
 
+import { motion } from "framer-motion"
 import { createClient } from "@/utils/supabase/client"
 
 export default function SignInClient() {
@@ -23,12 +24,14 @@ export default function SignInClient() {
 
   return (
       <main className="min-h-screen flex items-center justify-center">
-        <button
+        <motion.button
           onClick={signInWithGoogle}
           className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.97 }}
         >
           Continue with Google
-        </button>
+        </motion.button>
       </main>
   )
 }

@@ -1,6 +1,9 @@
 'use client'
 import Squares from "@/components/Squares";
 import Link from "next/link";
+import { motion } from "framer-motion";
+
+const MotionLink = motion.create(Link);
 
 export default function HomePage() {
   return (
@@ -22,18 +25,22 @@ export default function HomePage() {
           <h1 className="text-4xl md:text-6xl font-bold">Welcome to PokeNerdle!</h1>
           <p className="mt-3 opacity-80">Guess the Pokémon!</p>
           <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Link
+              <MotionLink
                 href="/daily"
                 className="w-full sm:w-auto min-w-[200px] rounded-full bg-cyan-500 px-6 py-3 text-center font-semibold text-[#0d1a26] hover:bg-cyan-400 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.97 }}
               >
                 Play Daily Challenge
-              </Link>
-              <Link
+              </MotionLink>
+              <MotionLink
                 href="/unlimited"
                 className="w-full sm:w-auto min-w-[200px] rounded-full bg-cyan-500 px-6 py-3 text-center font-semibold text-[#0d1a26] hover:bg-cyan-400 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.97 }}
               >
                 Play Unlimited Mode
-              </Link>
+              </MotionLink>
             </div>
         </div>
       </main>
