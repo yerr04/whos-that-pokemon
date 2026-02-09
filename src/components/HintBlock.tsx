@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion'
 import { HintType, ParsedPokemonInfo } from '@/types/game'
 import { capitalize, formatHeight, formatWeight } from '@/utils/pokemon'
 
@@ -5,25 +6,61 @@ interface HintBlockProps {
   type: HintType
   info: ParsedPokemonInfo
   win?: boolean
+  /** Optional index for stagger animation (e.g. 0, 1, 2…) */
+  index?: number
 }
 
-export function HintBlock({ type, info, win = false }: HintBlockProps) {
+const hintVariants = {
+  hidden: { opacity: 0, y: 12 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.06, duration: 0.3, ease: 'easeOut' as const },
+  }),
+}
+
+export function HintBlock({ type, info, win = false, index = 0 }: HintBlockProps) {
   const commonCls =
     'border-2 border-cyan-500 text-font px-3 py-2 rounded-full text-center shadow-md w-full py-4'
 
+  const motionProps =
+    type === 'silhouette'
+      ? {}
+      : {
+          initial: 'hidden',
+          animate: 'visible',
+          custom: index,
+          variants: hintVariants,
+        }
+
   switch (type) {
     case 'bst':
-      return <div className={commonCls}>BST: {info.bst}</div>
+      return (
+        <motion.div className={commonCls} {...motionProps}>
+          BST: {info.bst}
+        </motion.div>
+      )
     
     case 'region':
-      return <div className={commonCls}>Region: {info.region}</div>
-    
+      return (
+        <motion.div className={commonCls} {...motionProps}>
+          Region: {info.region}
+        </motion.div>
+      )
+
     case 'ability':
-      return <div className={commonCls}>Ability: {capitalize(info.ability)}</div>
-    
+      return (
+        <motion.div className={commonCls} {...motionProps}>
+          Ability: {capitalize(info.ability)}
+        </motion.div>
+      )
+
     case 'types':
       return (
-        <div className={`${commonCls} flex items-center justify-center space-x-2`}>
+        <motion.div
+          className={`${commonCls} flex items-center justify-center space-x-2`}
+          {...motionProps}
+        >
           <span>Type:</span>
           {info.types.map((t) => (
             <img
@@ -33,33 +70,52 @@ export function HintBlock({ type, info, win = false }: HintBlockProps) {
               className="w-12 h-4"
             />
           ))}
-        </div>
+        </motion.div>
       )
-    
+
     case 'pokedex':
       return (
-        <div className={`${commonCls} text-sm`}>
+        <motion.div className={`${commonCls} text-sm`} {...motionProps}>
           "{info.pokedexEntry}"
-        </div>
+        </motion.div>
       )
-    
+
     case 'move':
-      return <div className={commonCls}>Can Learn: {capitalize(info.move)}</div>
-    
+      return (
+        <motion.div className={commonCls} {...motionProps}>
+          Can Learn: {capitalize(info.move)}
+        </motion.div>
+      )
+
     case 'evolution':
-      return <div className={commonCls}>Evolution: {info.evolutionStage}</div>
-    
+      return (
+        <motion.div className={commonCls} {...motionProps}>
+          Evolution: {info.evolutionStage}
+        </motion.div>
+      )
+
     case 'height':
-      return <div className={commonCls}>Height: {formatHeight(info.height)}</div>
-    
+      return (
+        <motion.div className={commonCls} {...motionProps}>
+          Height: {formatHeight(info.height)}
+        </motion.div>
+      )
+
     case 'weight':
-      return <div className={commonCls}>Weight: {formatWeight(info.weight)}</div>
-    
+      return (
+        <motion.div className={commonCls} {...motionProps}>
+          Weight: {formatWeight(info.weight)}
+        </motion.div>
+      )
+
     case 'cry':
       return (
-        <div className={`${commonCls} flex items-center justify-center space-x-2`}>
+        <motion.div
+          className={`${commonCls} flex items-center justify-center space-x-2`}
+          {...motionProps}
+        >
           <audio controls src={info.cryUrl} className="h-8" />
-        </div>
+        </motion.div>
       )
     
     case 'silhouette':

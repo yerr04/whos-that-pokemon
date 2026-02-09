@@ -12,9 +12,15 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const supabase = await createClient();
-  // Middleware handles session refresh, so we only need to get the user once
-  const { data: { user } } = await supabase.auth.getUser();
+  let user = null;
+  try {
+    const supabase = await createClient();
+    // Middleware handles session refresh, so we only need to get the user once
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    // Supabase env vars may be missing during static prerendering (e.g. /_not-found)
+  }
 
   return (
     <html lang="en" className="scroll-smooth">

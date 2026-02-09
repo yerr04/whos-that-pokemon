@@ -2,6 +2,8 @@
 
 import { createBrowserClient } from '@supabase/ssr'
 
+const isBrowser = typeof document !== 'undefined'
+
 export function createClient() {
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -9,12 +11,14 @@ export function createClient() {
     {
       cookies: {
         getAll() {
+          if (!isBrowser) return []
           return document.cookie.split('; ').map(cookie => {
             const [name, ...rest] = cookie.split('=')
             return { name, value: decodeURIComponent(rest.join('=')) }
           })
         },
         setAll(cookiesToSet) {
+          if (!isBrowser) return
           cookiesToSet.forEach(({ name, value, options }) => {
             let cookieString = `${name}=${encodeURIComponent(value)}`
             if (options?.maxAge) {
@@ -32,7 +36,6 @@ export function createClient() {
             if (options?.secure) {
               cookieString += `; Secure`
             }
-            // Note: HttpOnly cookies cannot be set from JavaScript
             document.cookie = cookieString
           })
         },
