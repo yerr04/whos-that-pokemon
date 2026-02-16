@@ -2,11 +2,10 @@ export const dynamic = 'force-dynamic'
 
 import { redirect } from "next/navigation"
 import { createClient } from "@/utils/supabase/server"
+import { StatsDashboard } from "@/components/StatsDashboard"
 
 export default async function ProfilePage() {
   const supabase = await createClient()
-  // Middleware already refreshed the session, so getSession() is sufficient
-  // This avoids an extra getUser() call that could cause rate limiting
   const { data: { session } } = await supabase.auth.getSession()
   const user = session?.user
 
@@ -15,11 +14,15 @@ export default async function ProfilePage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto mt-24 md:mt-28 p-6">
-      <h1 className="text-2xl font-bold mb-4">Your Profile</h1>
-      <div className="space-y-2">
-        <div>Email: {user.email}</div>
+    <div className="mx-auto max-w-5xl px-4 pt-24 pb-12 md:pt-28">
+      <div className="mb-8 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+        <h1 className="text-2xl font-bold text-white">Your Profile</h1>
+        <p className="mt-1 text-white/70">{user.email}</p>
       </div>
+      <section>
+        <h2 className="mb-4 text-xl font-semibold text-white">Performance dashboard</h2>
+        <StatsDashboard />
+      </section>
     </div>
   )
 }
