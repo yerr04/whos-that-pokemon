@@ -1,5 +1,6 @@
 "use client"
 import { FormEvent } from 'react'
+import { motion } from 'framer-motion'
 import { HintBlock } from '@/components/HintBlock'
 import { MAX_GUESSES } from '@/types/game'
 import { capitalize } from '@/utils/pokemon'
@@ -83,12 +84,14 @@ export function GameInterface({
         {/* Debug toggle button */}
         {process.env.NODE_ENV === 'development' && setDebugMode !== undefined && (
           <div className="flex gap-2 mb-4">
-            <button
+            <motion.button
               onClick={() => setDebugMode(!debugMode)}
               className="px-3 py-1 bg-yellow-500 text-black rounded text-sm"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
             >
               Dev Mode : {debugMode ? 'ON' : 'OFF'}
-            </button>
+            </motion.button>
           </div>
         )}
 
@@ -140,8 +143,8 @@ export function GameInterface({
 
         {/* Hints section */}
         <div className="mt-4 space-y-2 transition-discrete">
-          {revealedHints.filter(hint => hint !== 'silhouette').map((hint) => (
-            <HintBlock key={hint} type={hint} info={info} />
+          {revealedHints.filter(hint => hint !== 'silhouette').map((hint, index) => (
+            <HintBlock key={hint} type={hint} info={info} index={index} />
           ))}
         </div>
 
@@ -184,12 +187,14 @@ export function GameInterface({
               
               {/* Unlimited mode - show next button */}
               {onNextPokemon && (
-                <button
+                <motion.button
                   onClick={onNextPokemon}
                   className="px-6 py-3 bg-[#206d46] text-white rounded hover:bg-[#55c58d] transition-colors font-bold"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.97 }}
                 >
                   NEXT POKÉMON
-                </button>
+                </motion.button>
               )}
             </div>
           ) : guessesMade >= MAX_GUESSES ? (
@@ -210,12 +215,14 @@ export function GameInterface({
               
               {/* Unlimited mode - show try again button */}
               {onNextPokemon && (
-                <button
+                <motion.button
                   onClick={onNextPokemon}
                   className="px-6 py-3 bg-[#206d46] text-white rounded hover:bg-[#55c58d] transition-colors font-bold"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.97 }}
                 >
                   TRY AGAIN
-                </button>
+                </motion.button>
               )}
             </div>
           ) : (
@@ -230,12 +237,14 @@ export function GameInterface({
                   placeholder="Who's that Pokémon?"
                   className="bg-white rounded-full px-3 py-2 flex-grow text-black border-6 border-cyan-500 focus:outline-none focus:ring-2 focus:ring-[#206d46] transition-colors"
                 />
-                <button
+                <motion.button
                   type="submit"
                   className="px-8 py-2 bg-cyan-500 text-black rounded-full hover:bg-cyan-400 transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.96 }}
                 >
                   Enter
-                </button>
+                </motion.button>
               </form>
               <p className="mt-2 text-gray-400">
                 {MAX_GUESSES - guessesMade} REMAINING GUESSES

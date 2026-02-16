@@ -118,7 +118,7 @@ function redactPokemonName(text: string, name: string) {
   return text.replace(re, (_m, s) => `This pokemon${s ?? ''}`)
 }
 
-// Get English flavor text from species data
+// pull pokedex entry from english flavor text entries
 export function getEnglishFlavorText(flavorTextEntries: any[], pokemonName?: string): string {
   const englishEntry = flavorTextEntries.find(entry => entry.language.name === 'en')
   const raw = englishEntry?.flavor_text ?? ''
