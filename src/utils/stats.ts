@@ -45,8 +45,8 @@ export async function recordGameResult({
     p_win: won,
     p_guesses_made: guessesMade,
     p_hints_revealed: hintsRevealed,
-    p_hint_type_on_win: hintTypeOnWin,
-    p_daily_date: dailyDateKey || null,
+    p_hint_type_on_win: hintTypeOnWin ?? null,
+    p_daily_date: dailyDateKey ?? null,
     p_hint_sequence: hintSequence,
     p_pokemon_id: pokemonId,
   });
