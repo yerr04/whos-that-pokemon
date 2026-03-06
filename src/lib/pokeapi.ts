@@ -38,6 +38,10 @@ export interface Pokemon {
   height: number; // in decimeters
   weight: number; // in hectograms
   moves: MoveEntry[];
+  species: {
+    name: string;
+    url: string;
+  };
   sprites: {
     front_default: string | null;
     other: {
@@ -64,6 +68,9 @@ export interface MoveEntry {
 export interface Species {
   id: number;
   name: string;
+  is_baby: boolean;
+  is_legendary: boolean;
+  is_mythical: boolean;
   generation: {
     name: string;
     url: string;
@@ -79,22 +86,21 @@ export interface Species {
   }[];
 }
 
+export interface EvolutionDetail {
+  trigger: { name: string };
+  item: { name: string } | null;
+  min_happiness: number | null;
+  min_level: number | null;
+}
+
+export interface EvolutionChainNode {
+  species: { name: string };
+  evolution_details: EvolutionDetail[];
+  evolves_to: EvolutionChainNode[];
+}
+
 export interface EvolutionChain {
-  chain: {
-    species: {
-      name: string;
-    };
-    evolves_to: {
-      species: {
-        name: string;
-      };
-      evolves_to: {
-        species: {
-          name: string;
-        };
-      }[];
-    }[];
-  };
+  chain: EvolutionChainNode;
 }
 
 /** ----- Cache Implementation ----- */

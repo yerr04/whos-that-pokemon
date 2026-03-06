@@ -6,7 +6,6 @@ interface HintBlockProps {
   type: HintType
   info: ParsedPokemonInfo
   win?: boolean
-  /** Optional index for stagger animation (e.g. 0, 1, 2…) */
   index?: number
 }
 
@@ -76,7 +75,7 @@ export function HintBlock({ type, info, win = false, index = 0 }: HintBlockProps
     case 'pokedex':
       return (
         <motion.div className={`${commonCls} text-sm`} {...motionProps}>
-          "{info.pokedexEntry}"
+          &ldquo;{info.pokedexEntry}&rdquo;
         </motion.div>
       )
 
@@ -105,6 +104,42 @@ export function HintBlock({ type, info, win = false, index = 0 }: HintBlockProps
       return (
         <motion.div className={commonCls} {...motionProps}>
           Weight: {formatWeight(info.weight)}
+        </motion.div>
+      )
+
+    case 'specialStatus':
+      return (
+        <motion.div className={commonCls} {...motionProps}>
+          Special Status: {info.specialStatus}
+        </motion.div>
+      )
+
+    case 'evolutionMethod':
+      return (
+        <motion.div className={commonCls} {...motionProps}>
+          Evolution Method: {info.evolutionMethod}
+        </motion.div>
+      )
+
+    case 'splitEvolution':
+      return (
+        <motion.div className={commonCls} {...motionProps}>
+          Evolution Line: {
+            info.hasSplitEvolution
+              ? 'Split Evolution'
+              : info.evolutionStage === 'No Evolution'
+                ? 'No Evolution Line'
+                : 'Linear Evolution'
+          }
+        </motion.div>
+      )
+
+    case 'specialForms':
+      return (
+        <motion.div className={commonCls} {...motionProps}>
+          {info.specialForms.length > 0
+            ? `Forms: ${info.specialForms.join(', ')}`
+            : 'Forms: No Special Forms'}
         </motion.div>
       )
 

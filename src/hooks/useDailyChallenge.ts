@@ -1,12 +1,13 @@
 // src/hooks/useDailyChallenge.ts
 import { useState, useEffect } from 'react'
 import { useGameLogic } from './useGameLogic'
-import { getTodaysDateKey, getDailyPokemonId, getTimeUntilNextChallenge } from '@/utils/dailyChallenge'
-import { HintType, MAX_GUESSES } from '@/types/game'
+import { getTodaysDateKey, getTimeUntilNextChallenge } from '@/utils/dailyChallenge'
+import { HintType, Difficulty, DIFFICULTY_CONFIG } from '@/types/game'
 import { createSeededRandom, generateHintSequence, isCloseMatch } from '@/utils/pokemon'
 import { recordGameResult } from '@/utils/stats'
 import { useAuth } from './useAuth'
 import { useSupabase } from '@/components/SupabaseProvider'
+import { selectRandomPokemon } from '@/data/pokemonCategories'
 
 interface DailyGameState {
   dateKey: string
@@ -16,10 +17,12 @@ interface DailyGameState {
   win: boolean
   completed: boolean
   hintSequence: HintType[]
+  difficulty: Difficulty
   devOverride?: boolean
 }
 
 const STORAGE_KEY = 'daily-pokemon-game'
+const DIFFICULTIES: Difficulty[] = ['easy', 'medium', 'hard']
 
 export function useDailyChallenge() {
   const gameLogic = useGameLogic()
@@ -29,35 +32,44 @@ export function useDailyChallenge() {
   const [timeUntilNext, setTimeUntilNext] = useState(getTimeUntilNextChallenge())
   const [currentDateKey, setCurrentDateKey] = useState(getTodaysDateKey())
 
-  // Generate deterministic hint sequence + RNG based on date+pokemon
   const makeDailyRandom = (dateKey: string, pokemonId: number) =>
     createSeededRandom(`${dateKey}:${pokemonId}`)
 
-  const generateDailyHintSequence = (dateKey: string, pokemonId: number): HintType[] => {
-    const rnd = makeDailyRandom(dateKey, pokemonId)
-    return generateHintSequence(rnd)
+  /**
+   * Derive a deterministic difficulty from the date seed.
+   */
+  const getDailyDifficulty = (dateKey: string): Difficulty => {
+    const rng = createSeededRandom(`difficulty:${dateKey}`)
+    return DIFFICULTIES[Math.floor(rng() * DIFFICULTIES.length)]
   }
 
-  // Load daily challenge
+  /**
+   * Pick a deterministic Pokemon ID using seeded weighted selection.
+   */
+  const getDailyPokemonId = (dateKey: string): number => {
+    const rng = createSeededRandom(`pokemon:${dateKey}`)
+    return selectRandomPokemon(rng)
+  }
+
   const loadDailyChallenge = async (forceNewPokemon = false) => {
     const todayKey = getTodaysDateKey()
     let pokemonId: number
     let hintSequence: HintType[]
+    let difficulty: Difficulty
     
     if (forceNewPokemon) {
-      // Use the same random generation as unlimited mode
-      pokemonId = Math.floor(Math.random() * 1025) + 1
-      hintSequence = generateHintSequence() // Truly random for dev
-      console.log('Dev mode: forcing new random Pokemon ID:', pokemonId)
+      pokemonId = selectRandomPokemon()
+      difficulty = DIFFICULTIES[Math.floor(Math.random() * DIFFICULTIES.length)]
+      hintSequence = generateHintSequence(difficulty)
     } else {
-      // For daily mode (not forceNewPokemon)
       pokemonId = getDailyPokemonId(todayKey)
+      difficulty = getDailyDifficulty(todayKey)
       const seededRandom = makeDailyRandom(todayKey, pokemonId)
-      hintSequence = generateDailyHintSequence(todayKey, pokemonId)
-      console.log('Daily Pokemon ID:', pokemonId, 'Hint sequence:', hintSequence)
+      hintSequence = generateHintSequence(difficulty, seededRandom)
     }
+
+    const config = DIFFICULTY_CONFIG[difficulty]
     
-    // Load saved game state
     const savedGame = localStorage.getItem(STORAGE_KEY)
     let currentState: DailyGameState
     
@@ -65,10 +77,9 @@ export function useDailyChallenge() {
       const parsed = JSON.parse(savedGame) as DailyGameState
       
       if (parsed.dateKey === todayKey) {
-        currentState = parsed
-        console.log('Loading existing daily challenge:', currentState)
+        // Backfill difficulty for saves from before the redesign
+        currentState = { ...parsed, difficulty: parsed.difficulty || difficulty }
       } else {
-        // New day detected, reset game
         currentState = {
           dateKey: todayKey,
           pokemonId,
@@ -77,13 +88,12 @@ export function useDailyChallenge() {
           win: false,
           completed: false,
           hintSequence,
+          difficulty,
           devOverride: false
         }
         localStorage.removeItem(STORAGE_KEY)
-        console.log('New day detected, resetting daily challenge:', currentState)
       }
     } else {
-      // First time playing or forced new Pokemon
       currentState = {
         dateKey: todayKey,
         pokemonId,
@@ -92,42 +102,46 @@ export function useDailyChallenge() {
         win: false,
         completed: false,
         hintSequence,
+        difficulty,
         devOverride: forceNewPokemon
       }
       if (forceNewPokemon) {
         localStorage.removeItem(STORAGE_KEY)
       }
-      console.log('First time playing or new Pokemon:', currentState)
     }
     
     setGameState(currentState)
     setCurrentDateKey(todayKey)
     
-    // Ensure move selection uses the same deterministic RNG
-    await gameLogic.loadPokemonData(pokemonId, { random: makeDailyRandom(todayKey, pokemonId) })
+    await gameLogic.loadPokemonData(pokemonId, {
+      random: makeDailyRandom(todayKey, pokemonId),
+      maxGuesses: config.maxGuesses,
+    })
   }
 
-  // Override the base handle guess to include daily state
   const handleGuess = async () => {
     if (!gameState || gameState.completed) return
+    const config = DIFFICULTY_CONFIG[gameState.difficulty]
 
     const newGuessesMade = gameState.guessesMade + 1
-    const isCorrect = isCloseMatch(gameLogic.currentGuess.toLowerCase(), gameLogic.targetName)
+    const guess = gameLogic.currentGuess.toLowerCase()
+    const isCorrect =
+      isCloseMatch(guess, gameLogic.targetName) ||
+      isCloseMatch(guess, gameLogic.displayName.toLowerCase())
     
     const newState: DailyGameState = {
       ...gameState,
       guessesMade: newGuessesMade,
       guesses: [...gameState.guesses, gameLogic.currentGuess],
       win: isCorrect,
-      completed: isCorrect || newGuessesMade >= MAX_GUESSES
+      completed: isCorrect || newGuessesMade >= config.maxGuesses
     }
     
     setGameState(newState)
     localStorage.setItem(STORAGE_KEY, JSON.stringify(newState))
     gameLogic.setCurrentGuess('')
     
-    // Record game result when completed
-    if ((isCorrect || newGuessesMade >= MAX_GUESSES) && user) {
+    if ((isCorrect || newGuessesMade >= config.maxGuesses) && user) {
       await recordGameResult({
         mode: 'daily',
         pokemonId: gameState.pokemonId,
@@ -141,58 +155,55 @@ export function useDailyChallenge() {
         dailyDateKey: currentDateKey,
         userId: user.id,
         supabase,
+        difficulty: gameState.difficulty,
       }).catch(err => {
         console.error('Failed to record daily game result:', err)
       })
     }
     
     if (isCorrect) {
-      // Trigger win state in base hook
       gameLogic.handleGuess()
     }
   }
 
-  // Reset daily challenge with NEW Pokemon (dev mode)
   const resetDailyChallenge = () => {
-    console.log('Manually resetting daily challenge with NEW Pokemon')
     localStorage.removeItem(STORAGE_KEY)
     gameLogic.resetGame()
     loadDailyChallenge(true)
   }
 
-  // FIXED: Check for new day (always check, regardless of dev override)
   const checkAndResetIfNewDay = () => {
     const todayKey = getTodaysDateKey()
     if (currentDateKey !== todayKey) {
-      console.log('Natural date change detected from', currentDateKey, 'to', todayKey)
       loadDailyChallenge(false)
     }
   }
 
-  // Use the stored hint sequence (same logic as unlimited mode)
+  const difficulty = gameState?.difficulty || 'medium'
+  const config = DIFFICULTY_CONFIG[difficulty]
+
   const revealedHints = gameLogic.debugMode 
     ? gameState?.hintSequence || []
     : gameState?.win 
     ? gameState?.hintSequence || []
     : gameState?.hintSequence?.slice(0, gameState?.guessesMade || 0) || []
 
-  // Update countdown and check for new day MORE FREQUENTLY
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeUntilNext(getTimeUntilNextChallenge())
       checkAndResetIfNewDay()
-    }, 1000) // Check every second
+    }, 1000)
     
     return () => clearInterval(timer)
-  }, [currentDateKey, gameState]) // Add gameState to dependencies
+  }, [currentDateKey, gameState])
 
-  // Load challenge on mount
   useEffect(() => {
     loadDailyChallenge()
   }, [])
 
   return {
     ...gameLogic,
+    maxGuesses: config.maxGuesses,
     guessesMade: gameState?.guessesMade || 0,
     guesses: gameState?.guesses || [],
     win: gameState?.win || false,
@@ -201,6 +212,7 @@ export function useDailyChallenge() {
     revealedHints,
     timeUntilNext,
     pokemonId: gameState?.pokemonId || 0,
+    difficulty,
     resetDailyChallenge
   }
 }

@@ -2,38 +2,49 @@
 import { FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { HintBlock } from '@/components/HintBlock'
-import { MAX_GUESSES } from '@/types/game'
-import { capitalize } from '@/utils/pokemon'
-import { ParsedPokemonInfo, HintType } from '@/types/game'
+import { PokemonAutocomplete } from '@/components/PokemonAutocomplete'
+import { ParsedPokemonInfo, HintType, Difficulty } from '@/types/game'
 
 interface GameInterfaceProps {
-  // Game state
   loading: boolean
   error: string | null
   info: ParsedPokemonInfo | null
   targetName: string
+  displayName?: string
   guessesMade: number
   currentGuess: string
   setCurrentGuess: (guess: string) => void
   win: boolean
   completed: boolean
   revealedHints: HintType[]
-  
-  // Game actions
+  maxGuesses: number
+
   handleGuess: () => void
-  
-  // Optional props for different modes
+
   guesses?: string[]
   timeUntilNext?: { hours: number; minutes: number; seconds: number }
   onNextPokemon?: () => void
-  
-  // Header content
+
   title?: string
   subtitle?: string
-  
-  // Dev mode (optional)
+
+  difficulty?: Difficulty
+  changeDifficulty?: (d: Difficulty) => void
+
   debugMode?: boolean
   setDebugMode?: (mode: boolean) => void
+}
+
+const DIFFICULTY_LABELS: Record<Difficulty, string> = {
+  easy: 'Easy',
+  medium: 'Medium',
+  hard: 'Hard',
+}
+
+const DIFFICULTY_COLORS: Record<Difficulty, string> = {
+  easy: 'bg-green-600 hover:bg-green-500',
+  medium: 'bg-yellow-600 hover:bg-yellow-500',
+  hard: 'bg-red-600 hover:bg-red-500',
 }
 
 export function GameInterface({
@@ -41,21 +52,27 @@ export function GameInterface({
   error,
   info,
   targetName,
+  displayName,
   guessesMade,
   currentGuess,
   setCurrentGuess,
   win,
   completed,
   revealedHints,
+  maxGuesses,
   handleGuess,
   guesses,
   timeUntilNext,
   onNextPokemon,
   title,
   subtitle,
+  difficulty,
+  changeDifficulty,
   debugMode,
   setDebugMode,
 }: GameInterfaceProps) {
+
+  const shownName = displayName || targetName.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('-')
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -109,6 +126,35 @@ export function GameInterface({
           </div>
         )}
 
+        {/* Difficulty selector (unlimited mode) or badge (daily mode) */}
+        {difficulty && (
+          <div className="flex items-center justify-center gap-2 mb-4">
+            {changeDifficulty ? (
+              // Unlimited mode: interactive selector
+              (['easy', 'medium', 'hard'] as Difficulty[]).map((d) => (
+                <motion.button
+                  key={d}
+                  onClick={() => changeDifficulty(d)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-semibold text-white transition-colors ${
+                    d === difficulty
+                      ? DIFFICULTY_COLORS[d]
+                      : 'bg-gray-600 hover:bg-gray-500'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {DIFFICULTY_LABELS[d]}
+                </motion.button>
+              ))
+            ) : (
+              // Daily mode: static badge
+              <span className={`px-4 py-1.5 rounded-full text-sm font-semibold text-white ${DIFFICULTY_COLORS[difficulty]}`}>
+                Today&apos;s Difficulty: {DIFFICULTY_LABELS[difficulty]}
+              </span>
+            )}
+          </div>
+        )}
+
         {/* Base image container */}
         <div className="relative">
           <img
@@ -127,7 +173,7 @@ export function GameInterface({
 
         {/* Guess Progress Indicator */}
         <div className="flex w-full mt-2 gap-1">
-          {Array.from({ length: MAX_GUESSES }, (_, index) => (
+          {Array.from({ length: maxGuesses }, (_, index) => (
             <div
               key={index}
               className={`flex-1 h-3 rounded ${
@@ -170,12 +216,11 @@ export function GameInterface({
           {win ? (
             <div>
               <p className="text-green-600 font-bold mb-4">
-                🎉 You got it in {guessesMade} guess
+                You got it in {guessesMade} guess
                 {guessesMade > 1 ? 'es' : ''}! It was{' '}
-                {capitalize(targetName)}.
+                {shownName}.
               </p>
               
-              {/* Daily mode - show countdown */}
               {timeUntilNext && (
                 <div className="text-white mb-4">
                   <p>Come back tomorrow for the next challenge!</p>
@@ -185,7 +230,6 @@ export function GameInterface({
                 </div>
               )}
               
-              {/* Unlimited mode - show next button */}
               {onNextPokemon && (
                 <motion.button
                   onClick={onNextPokemon}
@@ -193,17 +237,16 @@ export function GameInterface({
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  NEXT POKÉMON
+                  NEXT POKEMON
                 </motion.button>
               )}
             </div>
-          ) : guessesMade >= MAX_GUESSES ? (
+          ) : guessesMade >= maxGuesses ? (
             <div>
               <p className="text-red-600 font-bold mb-4">
-                Game over! The answer was {capitalize(targetName)}.
+                Game over! The answer was {shownName}.
               </p>
               
-              {/* Daily mode - show countdown */}
               {timeUntilNext && (
                 <div className="text-white mb-4">
                   <p>Better luck tomorrow!</p>
@@ -213,7 +256,6 @@ export function GameInterface({
                 </div>
               )}
               
-              {/* Unlimited mode - show try again button */}
               {onNextPokemon && (
                 <motion.button
                   onClick={onNextPokemon}
@@ -227,27 +269,13 @@ export function GameInterface({
             </div>
           ) : (
             <>
-              <form 
-                  onSubmit={onSubmit}
-                  id="guess-form" 
-                  className="flex space-x-2 justify-center">
-                <input
-                  value={currentGuess}
-                  onChange={(e) => setCurrentGuess(e.target.value)}
-                  placeholder="Who's that Pokémon?"
-                  className="bg-white rounded-full px-3 py-2 flex-grow text-black border-6 border-cyan-500 focus:outline-none focus:ring-2 focus:ring-[#206d46] transition-colors"
-                />
-                <motion.button
-                  type="submit"
-                  className="px-8 py-2 bg-cyan-500 text-black rounded-full hover:bg-cyan-400 transition-colors"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.96 }}
-                >
-                  Enter
-                </motion.button>
-              </form>
+              <PokemonAutocomplete
+                value={currentGuess}
+                onChange={setCurrentGuess}
+                onSubmit={onSubmit}
+              />
               <p className="mt-2 text-gray-400">
-                {MAX_GUESSES - guessesMade} REMAINING GUESSES
+                {maxGuesses - guessesMade} REMAINING GUESSES
               </p>
             </>
           )}

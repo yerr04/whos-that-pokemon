@@ -1,6 +1,6 @@
 // src/utils/stats.ts
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { HintType } from '@/types/game';
+import { HintType, Difficulty } from '@/types/game';
 
 type RecordGameInput = {
   mode: 'daily' | 'unlimited';
@@ -11,8 +11,9 @@ type RecordGameInput = {
   won: boolean;
   hintTypeOnWin: HintType | null;
   dailyDateKey?: string;
-  userId: string; // Accept userId as parameter to avoid redundant getUser() call
-  supabase: SupabaseClient; // Accept supabase client to reuse context instance
+  userId: string;
+  supabase: SupabaseClient;
+  difficulty?: Difficulty;
 };
 
 export async function recordGameResult({
@@ -26,6 +27,7 @@ export async function recordGameResult({
   dailyDateKey,
   userId,
   supabase,
+  difficulty,
 }: RecordGameInput) {
   console.log('Recording game result:', {
     mode,
@@ -36,7 +38,8 @@ export async function recordGameResult({
     won,
     hintTypeOnWin,
     dailyDateKey,
-    userId
+    userId,
+    difficulty
   });
 
   const { data, error } = await supabase.rpc('apply_game_result', {
@@ -49,6 +52,7 @@ export async function recordGameResult({
     p_daily_date: dailyDateKey ?? null,
     p_hint_sequence: hintSequence,
     p_pokemon_id: pokemonId,
+    p_difficulty: difficulty ?? null,
   });
 
   if (error) {
