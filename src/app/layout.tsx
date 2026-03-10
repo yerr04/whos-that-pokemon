@@ -27,12 +27,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="en" className="scroll-smooth">
       <head>
         <link rel="icon" href="/assets/pokeball.svg" type="image/svg+xml" />
-        <Script
-          async
-          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1564742613993404"
-          crossOrigin="anonymous"
-          strategy="beforeInteractive"
-        />
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1564742613993404"
+     crossOrigin="anonymous"></script>
       </head>
       <body>
         <SupabaseProvider initialUser={user ?? null}>
