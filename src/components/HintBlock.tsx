@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { HintType, ParsedPokemonInfo } from '@/types/game'
 import { capitalize, formatHeight, formatWeight } from '@/utils/pokemon'
+import { TYPE_COLORS } from '@/utils/typeColors'
 
 interface HintBlockProps {
   type: HintType
@@ -18,16 +19,35 @@ const hintVariants = {
   }),
 }
 
-export function HintBlock({ type, info, win = false, index = 0 }: HintBlockProps) {
-  const commonCls =
-    'border-2 border-cyan-500 text-font px-3 py-2 rounded-full text-center shadow-md w-full py-4'
+function HintCard({
+  label,
+  children,
+  motionProps,
+}: {
+  label: string
+  children: React.ReactNode
+  motionProps: Record<string, unknown>
+}) {
+  return (
+    <motion.div
+      className="pokedex-scanlines relative border-l-4 border-cyan-500 bg-[#0c1929]/80 backdrop-blur-sm rounded-lg px-4 py-3 shadow-md w-full"
+      {...motionProps}
+    >
+      <span className="block text-[10px] uppercase tracking-[0.15em] text-gray-400 mb-0.5">
+        {label}
+      </span>
+      <span className="block text-white font-semibold text-[15px]">{children}</span>
+    </motion.div>
+  )
+}
 
+export function HintBlock({ type, info, win = false, index = 0 }: HintBlockProps) {
   const motionProps =
     type === 'silhouette'
       ? {}
       : {
-          initial: 'hidden',
-          animate: 'visible',
+          initial: 'hidden' as const,
+          animate: 'visible' as const,
           custom: index,
           variants: hintVariants,
         }
@@ -35,124 +55,140 @@ export function HintBlock({ type, info, win = false, index = 0 }: HintBlockProps
   switch (type) {
     case 'bst':
       return (
-        <motion.div className={commonCls} {...motionProps}>
-          BST: {info.bst}
-        </motion.div>
+        <HintCard label="Base Stat Total" motionProps={motionProps}>
+          {info.bst}
+        </HintCard>
       )
-    
+
     case 'region':
       return (
-        <motion.div className={commonCls} {...motionProps}>
-          Region: {info.region}
-        </motion.div>
+        <HintCard label="Region" motionProps={motionProps}>
+          {info.region}
+        </HintCard>
       )
 
     case 'ability':
       return (
-        <motion.div className={commonCls} {...motionProps}>
-          Ability: {capitalize(info.ability)}
-        </motion.div>
+        <HintCard label="Ability" motionProps={motionProps}>
+          {capitalize(info.ability)}
+        </HintCard>
       )
 
     case 'types':
       return (
         <motion.div
-          className={`${commonCls} flex items-center justify-center space-x-2`}
+          className="pokedex-scanlines relative border-l-4 border-cyan-500 bg-[#0c1929]/80 backdrop-blur-sm rounded-lg px-4 py-3 shadow-md w-full"
           {...motionProps}
         >
-          <span>Type:</span>
-          {info.types.map((t) => (
-            <img
-              key={t}
-              src={`https://play.pokemonshowdown.com/sprites/types/${capitalize(t)}.png`}
-              alt={t}
-              className="w-12 h-4"
-            />
-          ))}
+          <span className="block text-[10px] uppercase tracking-[0.15em] text-gray-400 mb-1.5">
+            Type
+          </span>
+          <div className="flex items-center gap-2 flex-wrap">
+            {info.types.map((t) => (
+              <span
+                key={t}
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-bold text-white shadow-sm"
+                style={{
+                  backgroundColor: TYPE_COLORS[t] || '#68a090',
+                  textShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                }}
+              >
+                <img
+                  src={`https://play.pokemonshowdown.com/sprites/types/${capitalize(t)}.png`}
+                  alt=""
+                  className="w-10 h-3.5"
+                />
+                {capitalize(t)}
+              </span>
+            ))}
+          </div>
         </motion.div>
       )
 
     case 'pokedex':
       return (
-        <motion.div className={`${commonCls} text-sm`} {...motionProps}>
-          &ldquo;{info.pokedexEntry}&rdquo;
-        </motion.div>
+        <HintCard label="Pokédex Entry" motionProps={motionProps}>
+          <span className="text-sm italic text-gray-200">
+            &ldquo;{info.pokedexEntry}&rdquo;
+          </span>
+        </HintCard>
       )
 
     case 'move':
       return (
-        <motion.div className={commonCls} {...motionProps}>
-          Can Learn: {capitalize(info.move)}
-        </motion.div>
+        <HintCard label="Can Learn" motionProps={motionProps}>
+          {capitalize(info.move)}
+        </HintCard>
       )
 
     case 'evolution':
       return (
-        <motion.div className={commonCls} {...motionProps}>
-          Evolution: {info.evolutionStage}
-        </motion.div>
+        <HintCard label="Evolution Stage" motionProps={motionProps}>
+          {info.evolutionStage}
+        </HintCard>
       )
 
     case 'height':
       return (
-        <motion.div className={commonCls} {...motionProps}>
-          Height: {formatHeight(info.height)}
-        </motion.div>
+        <HintCard label="Height" motionProps={motionProps}>
+          {formatHeight(info.height)}
+        </HintCard>
       )
 
     case 'weight':
       return (
-        <motion.div className={commonCls} {...motionProps}>
-          Weight: {formatWeight(info.weight)}
-        </motion.div>
+        <HintCard label="Weight" motionProps={motionProps}>
+          {formatWeight(info.weight)}
+        </HintCard>
       )
 
     case 'specialStatus':
       return (
-        <motion.div className={commonCls} {...motionProps}>
-          Special Status: {info.specialStatus}
-        </motion.div>
+        <HintCard label="Special Status" motionProps={motionProps}>
+          {info.specialStatus}
+        </HintCard>
       )
 
     case 'evolutionMethod':
       return (
-        <motion.div className={commonCls} {...motionProps}>
-          Evolution Method: {info.evolutionMethod}
-        </motion.div>
+        <HintCard label="Evolution Method" motionProps={motionProps}>
+          {info.evolutionMethod}
+        </HintCard>
       )
 
     case 'splitEvolution':
       return (
-        <motion.div className={commonCls} {...motionProps}>
-          Evolution Line: {
-            info.hasSplitEvolution
-              ? 'Split Evolution'
-              : info.evolutionStage === 'No Evolution'
-                ? 'No Evolution Line'
-                : 'Linear Evolution'
-          }
-        </motion.div>
+        <HintCard label="Evolution Line" motionProps={motionProps}>
+          {info.hasSplitEvolution
+            ? 'Split Evolution'
+            : info.evolutionStage === 'No Evolution'
+              ? 'No Evolution Line'
+              : 'Linear Evolution'}
+        </HintCard>
       )
 
     case 'specialForms':
       return (
-        <motion.div className={commonCls} {...motionProps}>
+        <HintCard label="Forms" motionProps={motionProps}>
           {info.specialForms.length > 0
-            ? `Forms: ${info.specialForms.join(', ')}`
-            : 'Forms: No Special Forms'}
-        </motion.div>
+            ? info.specialForms.join(', ')
+            : 'No Special Forms'}
+        </HintCard>
       )
 
     case 'cry':
       return (
         <motion.div
-          className={`${commonCls} flex items-center justify-center space-x-2`}
+          className="pokedex-scanlines relative border-l-4 border-cyan-500 bg-[#0c1929]/80 backdrop-blur-sm rounded-lg px-4 py-3 shadow-md w-full"
           {...motionProps}
         >
-          <audio controls src={info.cryUrl} className="h-8" />
+          <span className="block text-[10px] uppercase tracking-[0.15em] text-gray-400 mb-1.5">
+            Cry
+          </span>
+          <audio controls src={info.cryUrl} className="h-8 w-full max-w-xs" />
         </motion.div>
       )
-    
+
     case 'silhouette':
       return (
         <div className="relative top-[13%] left-[7%] flex items-center">
@@ -165,7 +201,7 @@ export function HintBlock({ type, info, win = false, index = 0 }: HintBlockProps
           />
         </div>
       )
-      
+
     default:
       return null
   }

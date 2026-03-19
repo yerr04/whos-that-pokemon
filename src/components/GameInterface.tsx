@@ -2,6 +2,7 @@
 import { FormEvent } from 'react'
 import { motion } from 'framer-motion'
 import { HintBlock } from '@/components/HintBlock'
+import { HPBar } from '@/components/HPBar'
 import { PokemonAutocomplete } from '@/components/PokemonAutocomplete'
 import { ParsedPokemonInfo, HintType, Difficulty } from '@/types/game'
 
@@ -81,13 +82,25 @@ export function GameInterface({
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-screen">
-        <img
-          src="/assets/pokeball.svg"
-          alt="loading"
-          className="animate-spin w-8 h-auto"
-        />
-        <p className="text-white text-center mt-4">Searching tall grass...</p>
+      <div className="flex flex-col items-center justify-center h-screen gap-1">
+        <div className="relative">
+          <img
+            src="/assets/pokeball.svg"
+            alt="loading"
+            className="animate-pokeball-wobble w-12 h-auto drop-shadow-[0_0_8px_rgba(255,255,255,0.15)]"
+          />
+          <div className="absolute inset-0 flex items-center justify-center animate-pokeball-sparkle pointer-events-none">
+            <svg width="40" height="40" viewBox="0 0 40 40" className="text-yellow-300">
+              <line x1="20" y1="2" x2="20" y2="10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <line x1="20" y1="30" x2="20" y2="38" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <line x1="2" y1="20" x2="10" y2="20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <line x1="30" y1="20" x2="38" y2="20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            </svg>
+          </div>
+        </div>
+        <p className="text-white text-center mt-3 text-sm">
+          <span className="loading-dots">Searching tall grass</span>
+        </p>
       </div>
     )
   }
@@ -171,21 +184,8 @@ export function GameInterface({
           </div>
         </div>
 
-        {/* Guess Progress Indicator */}
-        <div className="flex w-full mt-2 gap-1">
-          {Array.from({ length: maxGuesses }, (_, index) => (
-            <div
-              key={index}
-              className={`flex-1 h-3 rounded ${
-                index < guessesMade
-                  ? win && index === guessesMade - 1
-                    ? 'bg-green-500'
-                    : 'bg-red-400'
-                  : 'bg-gray-200 border border-gray-300'
-              }`}
-            />
-          ))}
-        </div>
+        {/* HP Bar Guess Progress */}
+        <HPBar remaining={maxGuesses - guessesMade} max={maxGuesses} win={win} />
 
         {/* Hints section */}
         <div className="mt-4 space-y-2 transition-discrete">

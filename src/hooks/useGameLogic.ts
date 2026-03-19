@@ -1,5 +1,5 @@
 // src/hooks/useGameLogic.ts
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { getPokemon, getSpecies, getEvolutionChain } from '@/lib/pokeapi'
 import {
   computeBST,
@@ -37,28 +37,51 @@ export function useGameLogic() {
   const [win, setWin] = useState(false)
   const [debugMode, setDebugMode] = useState(false)
   const [maxGuesses, setMaxGuesses] = useState(7)
+  const latestLoadIdRef = useRef(0)
 
   const loadPokemonData = async (pokemonId: number, opts?: LoadOptions) => {
+    const loadId = ++latestLoadIdRef.current
+    const isStale = () => loadId !== latestLoadIdRef.current
+    const logStale = (stage: string) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.debug(
+          `[useGameLogic] Discarded stale load #${loadId} for pokemonId=${pokemonId} at ${stage}; latest=${latestLoadIdRef.current}`,
+        )
+      }
+    }
+
     setLoading(true)
     setError(null)
     if (opts?.maxGuesses) setMaxGuesses(opts.maxGuesses)
 
     try {
       const pokemon = await getPokemon(pokemonId)
-      setTargetName(pokemon.name.toLowerCase())
-      setDisplayName(getDisplayName(pokemon.name, pokemonId))
+      if (isStale()) {
+        logStale('after getPokemon')
+        return
+      }
 
       // Use species URL to get the correct species ID (critical for form Pokemon)
       const speciesId = extractSpeciesId(pokemon.species.url)
       const species = await getSpecies(speciesId || pokemon.id)
+      if (isStale()) {
+        logStale('after getSpecies')
+        return
+      }
       const evolutionChain = species.evolution_chain?.url
         ? await getEvolutionChain(species.evolution_chain.url)
         : undefined
+      if (isStale()) {
+        logStale('after getEvolutionChain')
+        return
+      }
 
       // For form Pokemon, use the base species name for chain lookups
       const speciesName = isFormPokemon(pokemonId) ? species.name : undefined
 
-      setInfo({
+      const nextTargetName = pokemon.name.toLowerCase()
+      const nextDisplayName = getDisplayName(pokemon.name, pokemonId)
+      const nextInfo: ParsedPokemonInfo = {
         bst: computeBST(pokemon),
         cryUrl: getCryUrl(pokemon.name),
         region: mapGenerationToRegion(species.generation.name),
@@ -74,12 +97,25 @@ export function useGameLogic() {
         hasSplitEvolution: hasSplitEvolution(evolutionChain),
         specialStatus: getSpecialStatus(pokemonId, species, speciesId || pokemon.id),
         specialForms: getSpecialForms(pokemonId),
-      })
+      }
+
+      if (isStale()) {
+        logStale('before commit')
+        return
+      }
+      // Commit answer + hints together to avoid mixed state from overlapping loads.
+      setTargetName(nextTargetName)
+      setDisplayName(nextDisplayName)
+      setInfo(nextInfo)
     } catch (err: any) {
-      console.error(err)
-      setError(err.message)
+      if (!isStale()) {
+        console.error(err)
+        setError(err.message)
+      }
     } finally {
-      setLoading(false)
+      if (!isStale()) {
+        setLoading(false)
+      }
     }
   }
 
