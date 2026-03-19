@@ -16,6 +16,7 @@ import { ParsedPokemonInfo } from '@/types/game'
 import { isCloseMatch } from '@/utils/pokemon'
 import {
   extractSpeciesId,
+  getFormCategory,
   getSpecialStatus,
   getSpecialForms,
   isFormPokemon,
@@ -78,6 +79,22 @@ export function useGameLogic() {
 
       // For form Pokemon, use the base species name for chain lookups
       const speciesName = isFormPokemon(pokemonId) ? species.name : undefined
+      const baseSpeciesId = speciesId || pokemon.id
+      const isMegaForm = isFormPokemon(pokemonId) && getFormCategory(pokemonId) === 'Mega'
+
+      // Mega evolutions share their base species move pool in practice.
+      // Keep Mega's own stats/types/abilities, but source "Can Learn" from base moves.
+      let movePool = pokemon.moves
+      if (isMegaForm) {
+        const basePokemon = await getPokemon(baseSpeciesId)
+        if (isStale()) {
+          logStale('after base move-pool fetch')
+          return
+        }
+        if (basePokemon.moves?.length) {
+          movePool = basePokemon.moves
+        }
+      }
 
       const nextTargetName = pokemon.name.toLowerCase()
       const nextDisplayName = getDisplayName(pokemon.name, pokemonId)
@@ -89,7 +106,7 @@ export function useGameLogic() {
         types: pokemon.types.sort((a, b) => a.slot - b.slot).map((t) => t.type.name),
         silhouetteUrl: pokemon.sprites.other['official-artwork'].front_default || '',
         pokedexEntry: getEnglishFlavorText(species.flavor_text_entries, species.name),
-        move: getRandomMove(pokemon.moves, opts?.random),
+        move: getRandomMove(movePool, opts?.random),
         height: pokemon.height,
         weight: pokemon.weight,
         evolutionStage: getEvolutionStage(pokemon.name, evolutionChain, speciesName),
