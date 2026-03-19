@@ -8,6 +8,9 @@ import { createClient } from "@/utils/supabase/server";
 
 
 export const metadata: Metadata = {
+  icons: {
+    icon: "/assets/pokeball.svg",
+  },
   title: "PokéNerdle",
   description: "Play 'Who's That Pokémon?' with a twist! Guess the Pokémon based on strategic hints and stats.",
 };
@@ -38,6 +41,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {/*<Nav />*/}
           {children}
           <Analytics />
+          {/* Footer so I don't get sued */}
+          <footer className="text-center text-sm text-gray-500 mt-12 mb-6 px-4">
+            <p>
+              PokéNerdle is a fan project. Any and all intellectual property belong to
+              {" "}The Pokémon Company, Nintendo, Game Freak, and related rights holders.
+            </p>
+          </footer>
         </SupabaseProvider>
       </body>
     </html>
