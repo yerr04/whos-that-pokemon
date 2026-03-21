@@ -366,6 +366,7 @@ Migrations in `src/utils/supabase/migration/`:
 4. **`profiles`**: User display data
    - Mirrors auth.users with additional fields
    - Auto-created via trigger on signup
+   - The `/profile` **trainer card** reads and updates `avatar_url` and `full_name` here (and syncs the same fields to Auth `user_metadata`). See **[PROFILE.md](./PROFILE.md)** for UI, persistence, and local OAuth notes.
 
 **RPC Function**: `apply_game_result()`
 - Accepts 10 parameters including `p_difficulty text default null`
@@ -485,6 +486,8 @@ Migrations in `src/utils/supabase/migration/`:
    |
 7. Middleware refreshes session on each request
 ```
+
+For the Pokémon-style profile page (trainer sprite, display name, dual persistence), see **[PROFILE.md](./PROFILE.md)**.
 
 ---
 

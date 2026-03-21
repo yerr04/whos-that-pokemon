@@ -47,7 +47,15 @@ export function useAuth() {
     return () => authListener.subscription.unsubscribe();
   }, [supabase, refreshUser]);
 
-  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const avatarUrl =
+    user?.user_metadata?.avatar_url ||
+    user?.user_metadata?.picture ||
+    null;
 
-  return { user, loading, avatarUrl, refreshUser };
+  const displayName =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    null;
+
+  return { user, loading, avatarUrl, displayName, refreshUser };
 }

@@ -102,7 +102,7 @@ export function Navbar({ initialUser }: Props) {
             {user ? (
               <MotionLink
                 href="/profile"
-                className="relative h-10 w-10 overflow-hidden rounded-full ring-2 ring-cyan-500/60 hover:ring-cyan-400/80 transition block"
+                className="relative h-10 w-10 overflow-hidden rounded-full ring-2 ring-cyan-500/60 hover:ring-cyan-400/80 transition block bg-white/5"
                 whileHover={{ scale: 1.08 }}
                 whileTap={{ scale: 0.95 }}
               >
@@ -111,7 +111,7 @@ export function Navbar({ initialUser }: Props) {
                   alt="Profile"
                   fill
                   sizes="40px"
-                  className="object-cover"
+                  className="object-cover object-top"
                 />
               </MotionLink>
             ) : (
@@ -215,13 +215,13 @@ export function Navbar({ initialUser }: Props) {
                     whileHover={{ x: 4, backgroundColor: 'rgba(255,255,255,0.1)' }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <span className="h-8 w-8 overflow-hidden rounded-full ring-2 ring-cyan-500/60 flex-shrink-0">
+                    <span className="h-8 w-8 overflow-hidden rounded-full ring-2 ring-cyan-500/60 flex-shrink-0 bg-white/5">
                       <Image
                         src={user.user_metadata?.avatar_url || '/assets/default-avatar.png'}
                         alt="Profile"
                         width={32}
                         height={32}
-                        className="h-8 w-8 object-cover"
+                        className="h-8 w-8 object-cover object-top"
                       />
                     </span>
                     <span>Profile</span>

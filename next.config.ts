@@ -7,6 +7,11 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
       },
+      {
+        protocol: 'https',
+        hostname: 'play.pokemonshowdown.com',
+        pathname: '/sprites/trainers/**',
+      },
     ],
   },
 };
