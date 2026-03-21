@@ -44,4 +44,4 @@ Game logic lives in custom hooks; `GameInterface` is a shared UI that receives g
 
 Inspired by Wordle. Pokémon data from [PokeAPI](https://pokeapi.co/); type icons and cries from [Pokémon Showdown](https://play.pokemonshowdown.com/).
 
-This is a FAN project. Any and all intellectual property belong to The Pokemon Company International and Nintendo Co. Ltd.
+This is a FAN project. Any and all intellectual property belong to The Pokemon Company International, Game Freak, Creatures Inc., and Nintendo Co. Ltd.
