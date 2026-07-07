@@ -258,10 +258,47 @@ export function getSpecialForms(pokemonId: number): string[] {
   return forms
 }
 
+// ---------------------------------------------------------------------------
+// Generations (national dex ID ranges) — used by the Unlimited mode filter
+// ---------------------------------------------------------------------------
+
+export interface GenerationInfo {
+  gen: number
+  label: string
+  region: string
+  start: number
+  end: number
+}
+
+export const GENERATIONS: GenerationInfo[] = [
+  { gen: 1, label: 'Gen 1', region: 'Kanto', start: 1, end: 151 },
+  { gen: 2, label: 'Gen 2', region: 'Johto', start: 152, end: 251 },
+  { gen: 3, label: 'Gen 3', region: 'Hoenn', start: 252, end: 386 },
+  { gen: 4, label: 'Gen 4', region: 'Sinnoh', start: 387, end: 493 },
+  { gen: 5, label: 'Gen 5', region: 'Unova', start: 494, end: 649 },
+  { gen: 6, label: 'Gen 6', region: 'Kalos', start: 650, end: 721 },
+  { gen: 7, label: 'Gen 7', region: 'Alola', start: 722, end: 809 },
+  { gen: 8, label: 'Gen 8', region: 'Galar', start: 810, end: 905 },
+  { gen: 9, label: 'Gen 9', region: 'Paldea', start: 906, end: 1025 },
+]
+
 /**
  * Weighted random selection: ~92% base forms, ~8% alternate forms.
+ * When a generation filter is given, picks uniformly from that generation's
+ * dex range (base forms only — alternate forms span generations ambiguously).
  */
-export function selectRandomPokemon(rng: () => number = Math.random): number {
+export function selectRandomPokemon(
+  rng: () => number = Math.random,
+  generation?: number | null,
+): number {
+  const genInfo = generation
+    ? GENERATIONS.find((g) => g.gen === generation)
+    : undefined
+  if (genInfo) {
+    const span = genInfo.end - genInfo.start + 1
+    return genInfo.start + Math.floor(rng() * span)
+  }
+
   const FORM_CHANCE = 0.08
   const formIds = [...ALL_FORM_IDS]
   if (rng() < FORM_CHANCE && formIds.length > 0) {

@@ -191,4 +191,30 @@ describe('OAuth Callback Route', () => {
       expect(redirectUrl).toMatch(/^https:\/\//)
     })
   })
+
+  describe('Open Redirect Protection', () => {
+    // The `next` param is attacker-controlled (it arrives on a link the user
+    // clicks), so anything that isn't a same-origin path must fall back to /.
+    it.each([
+      ['absolute URL', 'https://evil.com/phish'],
+      ['protocol-relative URL', '//evil.com/phish'],
+      ['backslash variant', '/\\evil.com/phish'],
+      ['missing leading slash', 'evil.com'],
+    ])('should not redirect off-origin for %s', async (_label, next) => {
+      const { createServerClient } = require('@supabase/ssr')
+      const mockSupabase = {
+        auth: {
+          exchangeCodeForSession: jest.fn().mockResolvedValue({ error: null }),
+        },
+      }
+      createServerClient.mockReturnValue(mockSupabase)
+
+      const request = createMockRequest('test-code', next)
+      await GET(request)
+
+      const redirectUrl = mockRedirect.mock.calls[0][0]
+      expect(redirectUrl).toBe('https://example.com/')
+      expect(redirectUrl).not.toContain('evil.com')
+    })
+  })
 })

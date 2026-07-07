@@ -78,9 +78,9 @@ export function ProfileCard({
   const { user, refreshUser } = useAuth()
   const { loading: statsLoading, modeTotals } = useUserStats()
 
-  const [displayName, setDisplayName] = useState(
-    initialProfile?.full_name || user?.user_metadata?.full_name || '',
-  )
+  // Use the profile handle as the source of truth. We intentionally do NOT fall
+  // back to user_metadata.full_name (the Google legal name) for privacy.
+  const [displayName, setDisplayName] = useState(initialProfile?.full_name || '')
   const [avatarUrl, setAvatarUrl] = useState(
     initialProfile?.avatar_url || user?.user_metadata?.avatar_url || '',
   )
@@ -166,11 +166,12 @@ export function ProfileCard({
         supabase.auth.updateUser({
           data: { full_name: editName, avatar_url: editAvatar },
         }),
+        // Deliberately no email here — profiles.email is never read for
+        // display and shouldn't be re-synced from the client.
         supabase.from('profiles').upsert({
           id: user.id,
           full_name: editName,
           avatar_url: editAvatar,
-          email: user.email,
           updated_at: new Date().toISOString(),
         }),
       ])

@@ -11,11 +11,24 @@ type RecordGameInput = {
   won: boolean;
   hintTypeOnWin: HintType | null;
   dailyDateKey?: string;
-  userId: string;
   supabase: SupabaseClient;
   difficulty?: Difficulty;
 };
 
+export type GameResultSummary = {
+  /** false when this daily was already recorded (duplicate submission) */
+  counted: boolean;
+  /** true when the result affected the streak (today's daily / unlimited) */
+  counts_for_streak?: boolean;
+  current_streak: number;
+  streak_freezes: number;
+};
+
+/**
+ * Records a finished game via the apply_game_result RPC. The server derives
+ * the user from the session (auth.uid()), applies date-aware streak logic and
+ * returns the updated streak + freeze count.
+ */
 export async function recordGameResult({
   mode,
   pokemonId,
@@ -25,26 +38,11 @@ export async function recordGameResult({
   won,
   hintTypeOnWin,
   dailyDateKey,
-  userId,
   supabase,
   difficulty,
-}: RecordGameInput) {
-  console.log('Recording game result:', {
-    mode,
-    pokemonId,
-    guessesMade,
-    hintsRevealed,
-    hintSequence,
-    won,
-    hintTypeOnWin,
-    dailyDateKey,
-    userId,
-    difficulty
-  });
-
+}: RecordGameInput): Promise<GameResultSummary | null> {
   const { data, error } = await supabase.rpc('apply_game_result', {
     p_mode: mode,
-    p_user_id: userId,
     p_win: won,
     p_guesses_made: guessesMade,
     p_hints_revealed: hintsRevealed,
@@ -58,7 +56,7 @@ export async function recordGameResult({
   if (error) {
     console.error('Failed to record game result:', error);
     throw error;
-  } else {
-    console.log('Successfully recorded game result');
   }
+
+  return (data as GameResultSummary | null) ?? null;
 }

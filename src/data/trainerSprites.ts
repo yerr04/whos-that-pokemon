@@ -5,6 +5,8 @@ export interface TrainerSprite {
   id: string
   label: string
   category: string
+  /** Achievement id (src/data/achievements.ts) required to use this sprite */
+  unlockAchievement?: string
 }
 
 export const TRAINER_SPRITES: TrainerSprite[] = [
@@ -103,15 +105,15 @@ export const TRAINER_SPRITES: TrainerSprite[] = [
   { id: 'rose', label: 'Rose', category: 'Villains' },
   { id: 'plumeria', label: 'Plumeria', category: 'Villains' },
 
-  // Special
+  // Special — most of these are earned through achievements
   { id: 'oak', label: 'Prof. Oak', category: 'Special' },
   { id: 'nurse', label: 'Nurse Joy', category: 'Special' },
-  { id: 'leon-tower', label: 'Leon (Tower)', category: 'Special' },
-  { id: 'marnie-league', label: 'Marnie (League)', category: 'Special' },
-  { id: 'gloria-league', label: 'Gloria (League)', category: 'Special' },
-  { id: 'cynthia-gen4', label: 'Cynthia (Classic)', category: 'Special' },
-  { id: 'red-gen7', label: 'Red (Alola)', category: 'Special' },
-  { id: 'blue-gen7', label: 'Blue (Alola)', category: 'Special' },
+  { id: 'leon-tower', label: 'Leon (Tower)', category: 'Special', unlockAchievement: 'streak_7' },
+  { id: 'marnie-league', label: 'Marnie (League)', category: 'Special', unlockAchievement: 'daily_25' },
+  { id: 'gloria-league', label: 'Gloria (League)', category: 'Special', unlockAchievement: 'games_100' },
+  { id: 'cynthia-gen4', label: 'Cynthia (Classic)', category: 'Special', unlockAchievement: 'streak_30' },
+  { id: 'red-gen7', label: 'Red (Alola)', category: 'Special', unlockAchievement: 'games_500' },
+  { id: 'blue-gen7', label: 'Blue (Alola)', category: 'Special', unlockAchievement: 'unlimited_50' },
 ]
 
 export const SPRITE_CATEGORIES = [
@@ -127,8 +129,20 @@ export function getTrainerSpriteUrl(id: string): string {
   return `${TRAINER_SPRITE_BASE_URL}${id}.png`
 }
 
-export function getRandomTrainerSprite(): TrainerSprite {
-  return TRAINER_SPRITES[Math.floor(Math.random() * TRAINER_SPRITES.length)]
+export function getRandomTrainerSprite(unlockedAchievements?: Set<string>): TrainerSprite {
+  const available = TRAINER_SPRITES.filter(
+    (s) =>
+      !s.unlockAchievement ||
+      (unlockedAchievements?.has(s.unlockAchievement) ?? false),
+  )
+  return available[Math.floor(Math.random() * available.length)]
+}
+
+export function isSpriteUnlocked(
+  sprite: TrainerSprite,
+  unlockedAchievements: Set<string>,
+): boolean {
+  return !sprite.unlockAchievement || unlockedAchievements.has(sprite.unlockAchievement)
 }
 
 export function isTrainerSpriteUrl(url: string | null | undefined): boolean {

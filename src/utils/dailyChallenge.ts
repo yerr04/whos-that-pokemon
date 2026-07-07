@@ -41,6 +41,39 @@ export function getTimeUntilNextChallenge(now: Date = new Date()): { hours: numb
   }
 }
 
+// ---------------------------------------------------------------------------
+// Daily archive
+// ---------------------------------------------------------------------------
+
+// Earliest replayable daily. Set this to the app's launch date — puzzles are
+// derived from the date string, so any date on/after this yields a valid game.
+export const DAILY_ARCHIVE_START = '2025-12-01'
+
+// Valid archive targets are real YYYY-MM-DD keys strictly BEFORE today's
+// challenge (today is played on /daily itself). ISO date strings compare
+// correctly as plain strings.
+export function isValidArchiveDateKey(key: string | null | undefined, now: Date = new Date()): key is string {
+  if (!key || !/^\d{4}-\d{2}-\d{2}$/.test(key)) return false
+  const parsed = new Date(`${key}T00:00:00Z`)
+  if (isNaN(parsed.getTime())) return false
+  return key >= DAILY_ARCHIVE_START && key < getTodaysDateKey(now)
+}
+
+// All archive date keys, newest first (yesterday back to DAILY_ARCHIVE_START).
+export function listArchiveDateKeys(now: Date = new Date()): string[] {
+  const keys: string[] = []
+  const today = getTodaysDateKey(now)
+  const cursor = new Date(`${today}T00:00:00Z`)
+  cursor.setUTCDate(cursor.getUTCDate() - 1)
+  while (true) {
+    const key = cursor.toISOString().slice(0, 10)
+    if (key < DAILY_ARCHIVE_START) break
+    keys.push(key)
+    cursor.setUTCDate(cursor.getUTCDate() - 1)
+  }
+  return keys
+}
+
 // Deterministic daily Pokémon ID derived ONLY from the dateKey
 export function getDailyPokemonId(dateKey?: string): number {
   const key = dateKey ?? getTodaysDateKey()

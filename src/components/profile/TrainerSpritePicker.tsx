@@ -7,7 +7,10 @@ import {
   SPRITE_CATEGORIES,
   getTrainerSpriteUrl,
   getRandomTrainerSprite,
+  isSpriteUnlocked,
 } from '@/data/trainerSprites'
+import { useAchievements } from '@/hooks/useAchievements'
+import { ACHIEVEMENTS_BY_ID } from '@/data/achievements'
 
 interface Props {
   currentSprite: string
@@ -18,6 +21,7 @@ interface Props {
 export function TrainerSpritePicker({ currentSprite, onSelect, onClose }: Props) {
   const [search, setSearch] = useState('')
   const [activeCategory, setActiveCategory] = useState<string | null>(null)
+  const { unlocked } = useAchievements()
 
   useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
@@ -68,7 +72,7 @@ export function TrainerSpritePicker({ currentSprite, onSelect, onClose }: Props)
             </h2>
             <div className="flex items-center gap-2">
               <button
-                onClick={() => onSelect(getTrainerSpriteUrl(getRandomTrainerSprite().id))}
+                onClick={() => onSelect(getTrainerSpriteUrl(getRandomTrainerSprite(unlocked).id))}
                 className="text-xs font-medium text-white/80 hover:text-white transition-colors px-3 py-1 rounded-full border border-white/20 hover:border-white/40"
               >
                 Random
@@ -131,26 +135,42 @@ export function TrainerSpritePicker({ currentSprite, onSelect, onClose }: Props)
                 {filtered.map((sprite) => {
                   const url = getTrainerSpriteUrl(sprite.id)
                   const isActive = currentSprite === url
+                  const locked = !isSpriteUnlocked(sprite, unlocked)
+                  const unlockName = sprite.unlockAchievement
+                    ? ACHIEVEMENTS_BY_ID[sprite.unlockAchievement]?.name
+                    : undefined
                   return (
                     <button
                       key={sprite.id}
-                      onClick={() => onSelect(url)}
+                      onClick={() => !locked && onSelect(url)}
+                      disabled={locked}
                       className={`group relative flex flex-col items-center gap-1 p-2 rounded-xl border transition-all ${
-                        isActive
+                        locked
+                          ? 'border-white/5 opacity-40 cursor-not-allowed'
+                          : isActive
                           ? 'border-cyan-500/60 bg-cyan-500/10 ring-1 ring-cyan-500/30'
                           : 'border-white/5 hover:border-white/20 hover:bg-white/5'
                       }`}
-                      title={sprite.label}
+                      title={
+                        locked
+                          ? `Locked — earn "${unlockName ?? '???'}" to unlock`
+                          : sprite.label
+                      }
                     >
                       <div className="w-14 h-14 flex items-center justify-center">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={url}
                           alt={sprite.label}
-                          className="max-w-full max-h-full object-contain"
+                          className={`max-w-full max-h-full object-contain ${locked ? 'grayscale' : ''}`}
                           loading="lazy"
                         />
                       </div>
+                      {locked && (
+                        <span className="absolute top-1 right-1 text-xs" aria-hidden>
+                          🔒
+                        </span>
+                      )}
                       <span className="text-[10px] text-white/50 group-hover:text-white/70 truncate w-full text-center leading-tight">
                         {sprite.label}
                       </span>

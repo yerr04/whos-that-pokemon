@@ -2,6 +2,7 @@
 import Squares from "@/components/Squares";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { StreakBanner } from "@/components/StreakBanner";
 
 const MotionLink = motion.create(Link);
 
@@ -22,6 +23,7 @@ export default function HomePage() {
       {/* Foreground content */}
       <main className="relative z-10 flex min-h-screen items-center justify-center p-4 md:p-8">
         <div className="animate-fly-in text-center text-white p-4 md:p-8 rounded-lg max-w-2xl">
+          <StreakBanner />
           <h1 className="text-4xl md:text-6xl font-bold">Welcome to PokeNerdle!</h1>
           <p className="mt-3 opacity-80">Guess the Pokémon!</p>
           <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center items-center">

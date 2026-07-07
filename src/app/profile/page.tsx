@@ -3,11 +3,13 @@ export const dynamic = 'force-dynamic'
 import { redirect } from "next/navigation"
 import { createClient } from "@/utils/supabase/server"
 import { ProfileCard } from "@/components/profile/ProfileCard"
+import { AchievementsGrid } from "@/components/profile/AchievementsGrid"
 
 export default async function ProfilePage() {
   const supabase = await createClient()
-  const { data: { session } } = await supabase.auth.getSession()
-  const user = session?.user
+  // getUser() validates the token server-side; getSession() only decodes the
+  // cookie and must never gate access.
+  const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
     redirect("/auth/sign-in?redirectTo=/profile")
@@ -20,8 +22,9 @@ export default async function ProfilePage() {
     .single()
 
   return (
-    <div className="mx-auto max-w-3xl px-4 pt-24 pb-12 md:pt-28">
+    <div className="mx-auto max-w-3xl space-y-6 px-4 pt-24 pb-12 md:pt-28">
       <ProfileCard initialProfile={profile} />
+      <AchievementsGrid />
     </div>
   )
 }

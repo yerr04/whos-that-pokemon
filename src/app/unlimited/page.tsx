@@ -1,9 +1,11 @@
 "use client"
 import { GameInterface } from '@/components/GameInterface'
 import { usePokemonGame } from '@/hooks/usePokemonGame'
+import { useAuth } from '@/hooks/useAuth'
 
 export default function UnlimitedMode() {
   const gameState = usePokemonGame()
+  const { user } = useAuth()
 
   return (
     <GameInterface
@@ -26,6 +28,11 @@ export default function UnlimitedMode() {
       onNextPokemon={gameState.loadNewPokemon}
       difficulty={gameState.difficulty}
       changeDifficulty={gameState.changeDifficulty}
+      generation={gameState.generation}
+      changeGeneration={gameState.changeGeneration}
+      newAchievements={gameState.newAchievements}
+      isGuest={!user}
+      mode="unlimited"
     />
   )
 }

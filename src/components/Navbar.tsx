@@ -98,6 +98,22 @@ export function Navbar({ initialUser }: Props) {
             >
               Unlimited Mode
             </MotionLink>
+            <MotionLink
+              href="/daily/archive"
+              className="text-white/90 hover:text-cyan-500 transition-colors"
+              whileHover={{ scale: 1.05, x: 2 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Archive
+            </MotionLink>
+            <MotionLink
+              href="/leaderboard"
+              className="text-white/90 hover:text-cyan-500 transition-colors"
+              whileHover={{ scale: 1.05, x: 2 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Leaderboard
+            </MotionLink>
 
             {user ? (
               <MotionLink
@@ -204,6 +220,26 @@ export function Navbar({ initialUser }: Props) {
                   whileTap={{ scale: 0.98 }}
                 >
                   Unlimited Mode
+                </MotionLink>
+                <MotionLink
+                  href="/daily/archive"
+                  className="block rounded-md px-4 py-3 text-white/90 hover:bg-white/10 hover:text-white transition text-base"
+                  onClick={() => setIsMenuOpen(false)}
+                  variants={{ open: { opacity: 1, x: 0 }, closed: { opacity: 0, x: -8 } }}
+                  whileHover={{ x: 4, backgroundColor: 'rgba(255,255,255,0.1)' }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Archive
+                </MotionLink>
+                <MotionLink
+                  href="/leaderboard"
+                  className="block rounded-md px-4 py-3 text-white/90 hover:bg-white/10 hover:text-white transition text-base"
+                  onClick={() => setIsMenuOpen(false)}
+                  variants={{ open: { opacity: 1, x: 0 }, closed: { opacity: 0, x: -8 } }}
+                  whileHover={{ x: 4, backgroundColor: 'rgba(255,255,255,0.1)' }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Leaderboard
                 </MotionLink>
 
                 {user ? (

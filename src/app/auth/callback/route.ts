@@ -2,11 +2,14 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { safeInternalPath } from '@/utils/safeRedirect'
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url)
   const code = requestUrl.searchParams.get('code')
-  const next = requestUrl.searchParams.get('next') ?? '/'
+  // Only same-origin paths — a raw `next` here is an open-redirect vector on
+  // the exact URL users land on right after authenticating.
+  const next = safeInternalPath(requestUrl.searchParams.get('next'))
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseKey =
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ??

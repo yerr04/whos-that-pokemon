@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { safeInternalPath } from '@/utils/safeRedirect'
 
 const PROTECTED_PREFIXES = ["/profile", "/stats"]
 
@@ -72,16 +73,12 @@ export function handleRouteProtection(request: NextRequest) {
   }
 
   // If authenticated and on sign-in page, respect the redirectTo parameter
+  // (validated to a same-origin path — "//host" would leave the site)
   if (authenticated && pathname.startsWith("/auth/sign-in")) {
     const redirectTo = new URLSearchParams(search).get("redirectTo")
     const url = request.nextUrl.clone()
-    if (redirectTo && redirectTo.startsWith("/")) {
-      url.pathname = redirectTo
-      url.search = ""
-    } else {
-      url.pathname = "/"
-      url.search = ""
-    }
+    url.pathname = safeInternalPath(redirectTo)
+    url.search = ""
     return NextResponse.redirect(url)
   }
 
@@ -97,7 +94,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // Create response first
-  let response = NextResponse.next({
+  const response = NextResponse.next({
     request: {
       headers: request.headers,
     },
@@ -126,10 +123,12 @@ export async function middleware(request: NextRequest) {
     },
   })
 
-  // Refresh session - this also validates the session and refreshes tokens if needed
-  // Use getSession() instead of getUser() to avoid extra API calls
-  const { data: { session } } = await supabase.auth.getSession()
-  const isAuthenticated = !!session?.user
+  // getUser() revalidates the JWT with Supabase Auth on every request (and
+  // refreshes tokens via the cookie handlers above). Never gate access on
+  // getSession() in server code — it just decodes the cookie, which a client
+  // can forge.
+  const { data: { user } } = await supabase.auth.getUser()
+  const isAuthenticated = !!user
 
   // Handle route protection based on actual session, not just cookies
   if (!isAuthenticated && isProtectedPath(pathname)) {
@@ -143,16 +142,12 @@ export async function middleware(request: NextRequest) {
   }
 
   // If authenticated and on sign-in page, redirect to intended destination
+  // (validated to a same-origin path — "//host" would leave the site)
   if (isAuthenticated && pathname.startsWith("/auth/sign-in")) {
     const redirectTo = new URLSearchParams(search).get("redirectTo")
     const url = request.nextUrl.clone()
-    if (redirectTo && redirectTo.startsWith("/")) {
-      url.pathname = redirectTo
-      url.search = ""
-    } else {
-      url.pathname = "/"
-      url.search = ""
-    }
+    url.pathname = safeInternalPath(redirectTo)
+    url.search = ""
     return NextResponse.redirect(url)
   }
 

@@ -2,14 +2,14 @@
 
 import { motion } from "framer-motion"
 import { createClient } from "@/utils/supabase/client"
+import { safeInternalPath } from "@/utils/safeRedirect"
 
 export default function SignInClient() {
   const supabase = createClient()
 
   const signInWithGoogle = async () => {
     const params = new URLSearchParams(window.location.search)
-    const redirectTo = params.get("redirectTo")
-    const nextPath = redirectTo && redirectTo.startsWith("/") ? redirectTo : "/"
+    const nextPath = safeInternalPath(params.get("redirectTo"))
     const configuredOrigin = process.env.NEXT_PUBLIC_APP_ORIGIN?.trim()
     const callbackOrigin = configuredOrigin || window.location.origin
     const oauthRedirectTo = `${callbackOrigin}/auth/callback?next=${encodeURIComponent(nextPath)}`

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { Navbar } from "@/components/Navbar";
 import { SupabaseProvider } from "@/components/SupabaseProvider";
+import { GuestStatsMerger } from "@/components/GuestStatsMerger";
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/next"
 import { createClient } from "@/utils/supabase/server";
@@ -36,6 +37,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <SupabaseProvider initialUser={user ?? null}>
+          {/* One-time import of guest localStorage stats after first sign-in */}
+          <GuestStatsMerger />
           {/* Pass the user to Navbar so SSR and client match */}
           {<Navbar initialUser={user ?? null} />}
           {/*<Nav />*/}

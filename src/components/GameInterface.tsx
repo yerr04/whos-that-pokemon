@@ -1,10 +1,15 @@
 "use client"
 import { FormEvent } from 'react'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { HintBlock } from '@/components/HintBlock'
 import { HPBar } from '@/components/HPBar'
 import { PokemonAutocomplete } from '@/components/PokemonAutocomplete'
+import { ShareButton } from '@/components/ShareButton'
+import { DailyDistribution } from '@/components/DailyDistribution'
+import { AchievementToast } from '@/components/AchievementToast'
 import { ParsedPokemonInfo, HintType, Difficulty } from '@/types/game'
+import { GENERATIONS } from '@/data/pokemonCategories'
 
 interface GameInterfaceProps {
   loading: boolean
@@ -32,8 +37,24 @@ interface GameInterfaceProps {
   difficulty?: Difficulty
   changeDifficulty?: (d: Difficulty) => void
 
+  /** Generation filter (unlimited mode); null = all generations */
+  generation?: number | null
+  changeGeneration?: (gen: number | null) => void
+
   debugMode?: boolean
   setDebugMode?: (mode: boolean) => void
+
+  mode?: 'daily' | 'unlimited'
+  dateKey?: string
+  streak?: number
+  /** Streak freezes currently held (signed-in daily players) */
+  streakFreezes?: number
+  /** Achievement ids unlocked by the game that just finished */
+  newAchievements?: string[]
+  /** True when replaying a past daily from the archive */
+  isArchive?: boolean
+  /** True when the player is not signed in (shows the save-your-streak CTA) */
+  isGuest?: boolean
 }
 
 const DIFFICULTY_LABELS: Record<Difficulty, string> = {
@@ -69,11 +90,39 @@ export function GameInterface({
   subtitle,
   difficulty,
   changeDifficulty,
+  generation,
+  changeGeneration,
   debugMode,
   setDebugMode,
+  mode,
+  dateKey,
+  streak,
+  streakFreezes,
+  newAchievements,
+  isArchive,
+  isGuest,
 }: GameInterfaceProps) {
 
   const shownName = displayName || targetName.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('-')
+
+  const canShare = !!mode && !!difficulty && !isArchive
+  const showDistribution = mode === 'daily' && !!dateKey && completed
+
+  const guestCta = isGuest && mode === 'daily' && completed && !isArchive && (
+    <div className="mx-auto mb-4 max-w-md rounded-xl border border-cyan-400/40 bg-cyan-500/10 px-4 py-3">
+      <p className="text-sm text-white/90">
+        {typeof streak === 'number' && streak > 1
+          ? `🔥 You're on a ${streak}-day streak — sign in so it doesn't get lost!`
+          : 'Sign in to save your streak and stats, and to appear on the leaderboard.'}
+      </p>
+      <Link
+        href="/auth/sign-in?redirectTo=/daily"
+        className="mt-2 inline-block rounded-full bg-cyan-500 px-4 py-1.5 text-sm font-semibold text-[#0d1a26] transition-colors hover:bg-cyan-400"
+      >
+        Sign in with Google
+      </Link>
+    </div>
+  )
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault()
@@ -162,9 +211,33 @@ export function GameInterface({
             ) : (
               // Daily mode: static badge
               <span className={`px-4 py-1.5 rounded-full text-sm font-semibold text-white ${DIFFICULTY_COLORS[difficulty]}`}>
-                Today&apos;s Difficulty: {DIFFICULTY_LABELS[difficulty]}
+                {isArchive ? 'Difficulty' : "Today's Difficulty"}: {DIFFICULTY_LABELS[difficulty]}
               </span>
             )}
+          </div>
+        )}
+
+        {/* Generation filter (unlimited mode) */}
+        {changeGeneration && (
+          <div className="flex items-center justify-center gap-2 mb-4">
+            <label htmlFor="gen-filter" className="text-sm text-gray-400">
+              Generation:
+            </label>
+            <select
+              id="gen-filter"
+              value={generation ?? ''}
+              onChange={(e) =>
+                changeGeneration(e.target.value === '' ? null : Number(e.target.value))
+              }
+              className="rounded-full border border-white/15 bg-[#1f2b3d] px-3 py-1.5 text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+            >
+              <option value="">All generations</option>
+              {GENERATIONS.map((g) => (
+                <option key={g.gen} value={g.gen}>
+                  {g.label} · {g.region}
+                </option>
+              ))}
+            </select>
           </div>
         )}
 
@@ -215,21 +288,71 @@ export function GameInterface({
         <div className="mt-6 text-center">
           {win ? (
             <div>
+              <AchievementToast ids={newAchievements ?? []} />
+
               <p className="text-green-600 font-bold mb-4">
                 You got it in {guessesMade} guess
                 {guessesMade > 1 ? 'es' : ''}! It was{' '}
                 {shownName}.
               </p>
-              
+
+              {mode === 'daily' && !isArchive && typeof streak === 'number' && streak > 0 && (
+                <motion.p
+                  className="mb-4 text-lg font-bold text-amber-400"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+                >
+                  🔥 {streak} day streak!
+                  {typeof streakFreezes === 'number' && streakFreezes > 0 && (
+                    <span
+                      className="ml-3 rounded-full border border-cyan-400/40 bg-cyan-500/10 px-2.5 py-1 text-sm font-semibold text-cyan-300 align-middle"
+                      title="Streak freezes cover missed days automatically. Earn one every 7-day streak (max 3)."
+                    >
+                      🧊 ×{streakFreezes}
+                    </span>
+                  )}
+                </motion.p>
+              )}
+
+              {guestCta}
+
+              {showDistribution && (
+                <DailyDistribution
+                  dateKey={dateKey!}
+                  maxGuesses={maxGuesses}
+                  myBucket={guessesMade}
+                />
+              )}
+
               {timeUntilNext && (
                 <div className="text-white mb-4">
                   <p>Come back tomorrow for the next challenge!</p>
                   <p className="text-sm text-gray-400">
                     Next challenge in: {timeUntilNext.hours}h {timeUntilNext.minutes}m {timeUntilNext.seconds}s
                   </p>
+                  <p className="mt-2 text-sm">
+                    <Link href="/daily/archive" className="text-cyan-400 hover:text-cyan-300 transition-colors">
+                      Can&apos;t wait? Replay a past daily →
+                    </Link>
+                  </p>
                 </div>
               )}
-              
+
+              {canShare && (
+                <div className="mb-4 flex justify-center">
+                  <ShareButton
+                    mode={mode!}
+                    win={win}
+                    guessesMade={guessesMade}
+                    maxGuesses={maxGuesses}
+                    difficulty={difficulty!}
+                    dateKey={dateKey}
+                    streak={streak}
+                  />
+                </div>
+              )}
+
               {onNextPokemon && (
                 <motion.button
                   onClick={onNextPokemon}
@@ -243,19 +366,50 @@ export function GameInterface({
             </div>
           ) : guessesMade >= maxGuesses ? (
             <div>
+              <AchievementToast ids={newAchievements ?? []} />
+
               <p className="text-red-600 font-bold mb-4">
                 Game over! The answer was {shownName}.
               </p>
-              
+
+              {guestCta}
+
+              {showDistribution && (
+                <DailyDistribution
+                  dateKey={dateKey!}
+                  maxGuesses={maxGuesses}
+                  myBucket="loss"
+                />
+              )}
+
               {timeUntilNext && (
                 <div className="text-white mb-4">
                   <p>Better luck tomorrow!</p>
                   <p className="text-sm text-gray-400">
                     Next challenge in: {timeUntilNext.hours}h {timeUntilNext.minutes}m {timeUntilNext.seconds}s
                   </p>
+                  <p className="mt-2 text-sm">
+                    <Link href="/daily/archive" className="text-cyan-400 hover:text-cyan-300 transition-colors">
+                      Practice on a past daily →
+                    </Link>
+                  </p>
                 </div>
               )}
-              
+
+              {canShare && (
+                <div className="mb-4 flex justify-center">
+                  <ShareButton
+                    mode={mode!}
+                    win={win}
+                    guessesMade={guessesMade}
+                    maxGuesses={maxGuesses}
+                    difficulty={difficulty!}
+                    dateKey={dateKey}
+                    streak={streak}
+                  />
+                </div>
+              )}
+
               {onNextPokemon && (
                 <motion.button
                   onClick={onNextPokemon}
