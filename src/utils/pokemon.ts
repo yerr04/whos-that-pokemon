@@ -1,4 +1,4 @@
-import { Pokemon, MoveEntry, EvolutionChainNode } from '@/lib/pokeapi'
+import { Pokemon, MoveEntry, EvolutionChainNode, EvolutionDetail } from '@/lib/pokeapi'
 import {
   HintType,
   Difficulty,
@@ -124,7 +124,24 @@ export function getEvolutionStage(
 }
 
 /**
+ * Describe a single evolution_details entry as a human-readable method.
+ */
+function describeEvolutionDetail(detail: EvolutionDetail | undefined): string {
+  if (!detail) return 'Level-Up'
+  const trigger = detail.trigger?.name
+  if (trigger === 'trade') return detail.item ? `Trade (${capitalize(detail.item.name.replace(/-/g, ' '))})` : 'Trade'
+  if (trigger === 'use-item' && detail.item) return `Item (${capitalize(detail.item.name.replace(/-/g, ' '))})`
+  if (detail.min_happiness) return 'Friendship'
+  if (trigger === 'level-up') return 'Level-Up'
+  return capitalize(trigger?.replace(/-/g, ' ') || 'Other')
+}
+
+/**
  * Walk the chain to find the evolution trigger for how this Pokemon was reached.
+ * Base-stage Pokemon have no incoming evolution, but if they evolve further,
+ * report how they evolve into their next stage instead of a blank 'N/A' —
+ * otherwise every base Pokemon that evolves by leveling up looks like it has
+ * no evolution method at all.
  */
 export function getEvolutionMethod(
   pokemonName: string,
@@ -137,14 +154,7 @@ export function getEvolutionMethod(
   function findInChain(node: EvolutionChainNode): string | null {
     for (const child of node.evolves_to) {
       if (child.species.name === nameToMatch) {
-        const detail = child.evolution_details[0]
-        if (!detail) return 'Level-Up'
-        const trigger = detail.trigger?.name
-        if (trigger === 'trade') return detail.item ? `Trade (${capitalize(detail.item.name.replace(/-/g, ' '))})` : 'Trade'
-        if (trigger === 'use-item' && detail.item) return `Item (${capitalize(detail.item.name.replace(/-/g, ' '))})`
-        if (detail.min_happiness) return 'Friendship'
-        if (trigger === 'level-up') return 'Level-Up'
-        return capitalize(trigger?.replace(/-/g, ' ') || 'Other')
+        return describeEvolutionDetail(child.evolution_details[0])
       }
       const deeper = findInChain(child)
       if (deeper) return deeper
@@ -152,8 +162,10 @@ export function getEvolutionMethod(
     return null
   }
 
-  // First stage has no incoming evolution
-  if (evolutionChain.chain.species.name === nameToMatch) return 'N/A'
+  if (evolutionChain.chain.species.name === nameToMatch) {
+    const next = evolutionChain.chain.evolves_to[0]
+    return next ? describeEvolutionDetail(next.evolution_details[0]) : 'N/A'
+  }
   return findInChain(evolutionChain.chain) || 'N/A'
 }
 

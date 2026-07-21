@@ -10,9 +10,13 @@
 }
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* The UI is designed as a single dark theme (dark backgrounds, white text).
+     These are fixed rather than following prefers-color-scheme so the app
+     doesn't render unreadable white-on-white text for light-mode users. */
+  --background: #060010;
+  --foreground: #ededed;
   --font-pokemon: 'Noto Sans JP', Arial, Helvetica, sans-serif;
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -20,13 +24,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-pokemon);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #060010;
-    --foreground: #ededed;
-  }
 }
 
 body {
